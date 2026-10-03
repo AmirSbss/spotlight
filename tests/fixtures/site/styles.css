@@ -1,0 +1,7 @@
+:root { --bg: #0f172a; --ink: #f8fafc; --accent: #f59e0b; }
+html, body { margin: 0; background: var(--bg); color: var(--ink); font-family: "Fixture Sans", Georgia, serif; }
+header { display: flex; align-items: center; gap: 12px; padding: 16px; }
+header img { width: 48px; height: 48px; }
+section { min-height: 900px; padding: 40px 24px; border-top: 1px solid #334155; }
+.btn { display: inline-block; background: var(--accent); color: #111; padding: 12px 20px; border-radius: 8px; text-decoration: none; }
+.cookie-banner { position: fixed; left: 0; right: 0; bottom: 0; height: 160px; background: rgb(255, 0, 255); color: #000; display: flex; align-items: center; justify-content: center; gap: 16px; }

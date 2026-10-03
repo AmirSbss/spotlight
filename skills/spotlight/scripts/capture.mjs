@@ -7,31 +7,17 @@
 // Page contract (scene.html): window.ready resolves { fps, duration, width, height };
 // window.render(t) draws time t as a pure function of t and resolves once it's painted-ready.
 // CAPTURE_WORKERS=n overrides the number of parallel pages; CHROMIUM=path picks the browser.
-import { createRequire } from "node:module";
-import { existsSync, mkdirSync, readdirSync, unlinkSync } from "node:fs";
+import { mkdirSync, readdirSync, unlinkSync } from "node:fs";
 import os from "node:os";
 import { pathToFileURL } from "node:url";
-
-const require = createRequire(process.cwd() + "/");
-let chromium;
-try {
-  ({ chromium } = require("playwright-core"));
-} catch {
-  console.error(`playwright-core isn't installed in ${process.cwd()}; run: npm i --prefix . playwright-core`);
-  process.exit(2);
-}
+import { launch } from "./browser.mjs";
 
 const mode = process.argv[2];
 if (mode !== "frames" && mode !== "stills") {
   console.error("usage: capture.mjs frames | stills <t>...");
   process.exit(2);
 }
-const executablePath = process.env.CHROMIUM
-  || ["/usr/bin/chromium", "/usr/bin/chromium-browser", "/usr/bin/google-chrome"].find(existsSync);
-const browser = await chromium.launch({
-  executablePath,
-  args: ["--no-sandbox", "--force-color-profile=srgb", "--font-render-hinting=none", "--disable-gpu"],
-});
+const browser = await launch();
 let errors = 0;
 
 async function openPage() {

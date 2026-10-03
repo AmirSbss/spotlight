@@ -1,0 +1,14 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>Endless</title><link rel="stylesheet" href="styles.css"></head>
+<body>
+<h1>Endless feed</h1>
+<div id="feed"></div>
+<script>
+  // grows forever as you scroll: site.mjs must still finish
+  const feed = document.getElementById("feed");
+  const more = () => { for (let i = 0; i < 5; i++) { const s = document.createElement("section"); s.textContent = "item"; feed.append(s); } };
+  more(); addEventListener("scroll", () => { if (innerHeight + scrollY > document.body.scrollHeight - 1200) more(); });
+</script>
+</body>
+</html>
