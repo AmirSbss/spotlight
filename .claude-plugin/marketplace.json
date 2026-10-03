@@ -1,0 +1,6 @@
+{
+  "name": "spotlight",
+  "description": "Point it at a site, footage or a topic; get a video that brags, promotes or explains.",
+  "owner": { "name": "Amirh. Co", "url": "https://github.com/AmirSbss" },
+  "plugins": [ { "name": "spotlight", "source": "./", "description": "Videos that brag, promote or explain, from a website, footage or a description." } ]
+}

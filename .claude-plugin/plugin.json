@@ -1,0 +1,10 @@
+{
+  "name": "spotlight",
+  "description": "Turn a website, a code project, footage or photos, and a description into a short video that brags, promotes a point, or explains a topic, with music, text in any language, a poster and a caption.",
+  "version": "0.1.0",
+  "author": { "name": "Amirh. Co", "url": "https://github.com/AmirSbss" },
+  "license": "MIT",
+  "homepage": "https://github.com/AmirSbss/spotlight",
+  "repository": "https://github.com/AmirSbss/spotlight",
+  "keywords": ["video", "launch-video", "promo", "explainer", "presentation", "video-editing", "skill"]
+}
