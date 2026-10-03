@@ -204,6 +204,9 @@ def main():
         cli("encode", frames, "none", work / "silent.mp4")
         s = json.loads(run(["ffprobe", "-v", "error", "-of", "json", "-show_streams", work / "silent.mp4"]))
         assert sorted(x["codec_type"] for x in s["streams"]) == ["audio", "video"], s["streams"]
+        # ...and it runs the whole video: hitting the frame limit used to close the output with seconds of silence unwritten
+        lens = {x["codec_type"]: float(x["duration"]) for x in s["streams"]}
+        assert abs(lens["audio"] - lens["video"]) < 0.05, lens
 
         # tagged BT.709 end to end, colours intact, and the poster embedded as cover art
         reds = work / "reds"

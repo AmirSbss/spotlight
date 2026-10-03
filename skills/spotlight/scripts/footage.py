@@ -229,8 +229,11 @@ def encode(frames, mix, dst, poster=None):
         maps = ["-map", "[v]", "-map", "[a]"]
     else:
         # a silent track, not none: Telegram and others treat audio-less MP4s as GIFs
+        # through the graph like a real mix: mapped straight in, it fell behind the video and the frame limit
+        # closed the file with seconds of it unwritten
         inputs += ["-f", "lavfi", "-t", dur, "-i", "anullsrc=r=48000:cl=stereo"]
-        maps = ["-map", "[v]", "-map", "1:a"]
+        graph += ";[1:a]anull[a]"
+        maps = ["-map", "[v]", "-map", "[a]"]
     if poster:
         # cover art: players and file browsers show it without a poster frame flashing inside the video
         inputs += ["-i", poster]
