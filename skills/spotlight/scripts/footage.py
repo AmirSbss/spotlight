@@ -6,6 +6,7 @@
   encode <frames-dir> <mix.wav|none> <out.mp4> [--poster img]
                                                    PNG/JPG frames + mix -> BT.709 H.264/AAC mp4 at -14 LUFS (two-pass),
                                                    with the poster embedded as cover art
+  check  <video> [--end-card s] [--target LUFS] [--out dir]    frozen holds, loudness, frames, contact sheet -> check.json
 
 Needs ffmpeg/ffprobe (with zscale) and ImageMagick 6 or 7. Python stdlib only.
 """
@@ -152,7 +153,7 @@ def prep(work, files):
                     f"drawtext=text='#{i} %{{pts\\:hms}}':x=10:y=10:fontsize=28:fontcolor=white:box=1:boxcolor=black@0.6",
                     "tile=4x3"]
                 info["sheet"] = str(sheets / f"video-{i:03d}.jpg")
-                run(["ffmpeg", "-y", "-v", "error", "-i", f, "-vf", ",".join(vf), "-frames:v", "1", info["sheet"]])
+                run(["ffmpeg", "-y", "-v", "error", "-i", f, "-vf", ",".join(vf), "-frames:v", "1", "-update", "1", info["sheet"]])
         except Exception as e:  # one unreadable file must not sink the whole folder
             info = {"index": i, "file": str(f), "kind": kind(f), "error": str(e)}
         items.append(info)
@@ -244,6 +245,85 @@ def encode(frames, mix, dst, poster=None):
         raise RuntimeError(f"encoded {got} of {n} frames; is every frame file a real {ext.upper()}?")
 
 
+def frozen_samples(video, threshold=0.35):
+    # luma difference between consecutive frames sampled at 10 fps (approach from motion-video-kit, MIT):
+    # a sample under the threshold means nothing visible moved in that 0.1 s
+    r = subprocess.run(["ffmpeg", "-hide_banner", "-nostats", "-i", str(video), "-map", "0:v:0", "-vf",
+                        "fps=10,scale=320:-2,format=gray,tblend=all_mode=difference,signalstats,"
+                        "metadata=print:key=lavfi.signalstats.YAVG", "-an", "-f", "null", "-"],
+                       capture_output=True, text=True)
+    values = [float(v) for v in re.findall(r"YAVG=([0-9.]+)", r.stderr)]
+    return [round((i + 1) / 10, 2) for i, v in enumerate(values) if v < threshold]
+
+
+def holds(times, step=0.1):
+    # consecutive frozen samples -> [start, end] stretches
+    out = []
+    for t in times:
+        if out and t - out[-1][1] <= step + 1e-6:
+            out[-1][1] = t
+        else:
+            out.append([round(t - step, 2), t])
+    return out
+
+
+def loudness(video):
+    data = json.loads(run(["ffprobe", "-v", "error", "-of", "json", "-show_streams", video]))
+    if not any(s.get("codec_type") == "audio" for s in data.get("streams", [])):
+        return None
+    r = subprocess.run(["ffmpeg", "-hide_banner", "-nostats", "-i", str(video), "-map", "0:a:0", "-af", "ebur128=peak=true",
+                        "-f", "null", "-"], capture_output=True, text=True)
+    tail = r.stderr[r.stderr.rfind("Summary:"):]
+    grab = lambda k: float(re.search(rf"{k}:\s+(-?[0-9.]+|-inf)", tail).group(1).replace("-inf", "-99"))
+    return {"I": grab("I"), "LRA": grab("LRA"), "TP": grab("Peak")}
+
+
+def check(video, end_card=0.0, target=-14.0, out=None):
+    video = Path(video)
+    out = Path(out) if out else video.parent
+    out.mkdir(parents=True, exist_ok=True)
+    data = json.loads(run(["ffprobe", "-v", "error", "-of", "json", "-count_packets", "-show_streams", video]))
+    v = next(s for s in data["streams"] if s["codec_type"] == "video" and not s.get("disposition", {}).get("attached_pic"))
+    a = next((s for s in data["streams"] if s["codec_type"] == "audio"), None)
+    num, den = (v.get("avg_frame_rate") or "0/0").split("/")
+    fps = int(num) / int(den) if int(den) else FPS
+    frames = int(v["nb_read_packets"])
+    dur = float(v.get("duration") or frames / fps)
+    stretches = [h for h in holds(frozen_samples(video)) if h[0] < dur - end_card - 1e-6]
+    stretches = [[s, min(e, dur - end_card)] for s, e in stretches]
+    total = round(sum(e - s for s, e in stretches), 2)
+    long_holds = [[s, e] for s, e in stretches if e - s > 0.6]
+    budget = round(max(dur - end_card, 0) / 30, 2)
+    loud = loudness(video)
+    warnings, failures = [], []
+    if abs(frames - round(dur * fps)) > 1:
+        failures.append(f"frame count {frames} doesn't match {dur:.3f}s at {fps:g} fps")
+    if loud:
+        if loud["TP"] > -1.0:
+            failures.append(f"true peak {loud['TP']} dBTP is above -1")
+        if loud["I"] <= -69.9:  # ebur128's floor: a silent track (encode's mix=none) or audio shorter than its 400 ms gate
+            warnings.append("audio is silent or too short to measure (integrated loudness at the -70 LUFS floor)")
+        else:
+            if abs(loud["I"] - target) > 1.0:
+                failures.append(f"integrated loudness {loud['I']} LUFS is more than 1 LU from {target}")
+            if loud["LRA"] < 3:
+                warnings.append(f"loudness range {loud['LRA']} LU is under 3 (fine for calm pieces, flat for energetic ones)")
+    if total > budget:
+        warnings.append(f"frozen {total}s, over the budget of {budget}s (1s per 30s)")
+    for s, e in long_holds:
+        warnings.append(f"hold without motion {s:.1f}-{e:.1f}s ({e - s:.1f}s > 0.6s)")
+    sheet = out / "check-sheet.jpg"
+    vf = (f"fps={24 / max(dur, 0.1)},scale=270:-2,"
+          "drawtext=text='%{pts\\:hms}':x=6:y=6:fontsize=18:fontcolor=white:box=1:boxcolor=black@0.6,tile=6x4")
+    run(["ffmpeg", "-y", "-v", "error", "-i", video, "-map", "0:v:0", "-vf", vf, "-frames:v", "1", "-update", "1", sheet])
+    result = {"file": str(video), "duration": round(dur, 3), "fps": round(fps, 3), "frames": frames,
+              "size": [v["width"], v["height"]], "video_codec": v.get("codec_name"), "audio_codec": a and a.get("codec_name"),
+              "loudness": loud, "frozen": {"total": total, "holds": stretches, "long_holds": long_holds, "budget": budget},
+              "warnings": warnings, "failures": failures, "sheet": str(sheet)}
+    (out / "check.json").write_text(json.dumps(result, indent=2, ensure_ascii=False))
+    return result
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = ap.add_subparsers(dest="cmd", required=True)
@@ -257,6 +337,11 @@ def main():
     for name in ("frames", "mix", "dst"):
         p.add_argument(name)
     p.add_argument("--poster", help="image embedded as MP4 cover art")
+    p = sub.add_parser("check", help="measure a render: frozen holds, loudness, frames, contact sheet")
+    p.add_argument("video")
+    p.add_argument("--end-card", type=float, default=0.0, help="seconds at the end exempt from the frozen check")
+    p.add_argument("--target", type=float, default=-14.0)
+    p.add_argument("--out")
     a = ap.parse_args()
     try:
         if a.cmd == "prep":
@@ -264,7 +349,18 @@ def main():
             print(f"{len(items)} files, {sum('error' in x for x in items)} unreadable -> {a.work}/manifest.jsonl")
         elif a.cmd == "shot":
             print(shot(a.clip, a.start, a.dur, a.size, a.cx, a.outdir), "frames")
-        else:
+        elif a.cmd == "check":
+            r = check(a.video, a.end_card, a.target, a.out)
+            loud = r["loudness"] or {}
+            print(f"{r['duration']}s {r['frames']} frames {r['size'][0]}x{r['size'][1]} · I {loud.get('I')} LRA {loud.get('LRA')} "
+                  f"TP {loud.get('TP')} · frozen {r['frozen']['total']}s (budget {r['frozen']['budget']}s) · sheet {r['sheet']}")
+            for w in r["warnings"]:
+                print("warning:", w)
+            for f in r["failures"]:
+                print("FAIL:", f)
+            if r["failures"]:
+                raise SystemExit(1)
+        elif a.cmd == "encode":
             encode(a.frames, a.mix, a.dst, a.poster)
             print(a.dst)
     except (RuntimeError, ValueError) as e:
