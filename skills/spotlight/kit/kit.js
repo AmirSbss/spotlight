@@ -4,7 +4,8 @@
 // shots, in order, each { a, b } in seconds plus one of:
 //   clip: "frames/s01", n: 65          frames written by `footage.py shot`
 //   still: "stills/004.jpg"            a photo, an AI image or a background still
-//   web: "site/full.png", scroll: [y0, y1]   a captured page drawn at the output width and scrolled (output px)
+//   web: "site/full.png", scroll: [y0, y1]   a captured page drawn at the output width and scrolled at a constant
+//                          speed (output px)
 //   drift: [x0, x1]        horizontal drift in % of width. Stills move linearly: a photo defaults to push 1 +0.01/s;
 //                          a still with a `filter` (text-card backdrop) to push 1.10 +0.08/s and drift 0 +4%/s
 // and optionally:
@@ -49,11 +50,12 @@
     const p = clamp((t - s.a) / (s.b - s.a));
     const e = inOutCubic(p);
     const src = s.clip ? `${s.clip}/${String(frameAt(s, t)).padStart(5, "0")}.jpg` : (s.still || s.web);
-    // stills move linearly at a constant speed (an eased move stalls at both ends, and that reads as frozen): a photo
-    // pushes in +0.01/s; a text-card backdrop (a still with a `filter`) pushes +0.08/s and drifts +4%/s, so its overflow
-    // grows as fast as its drift and the edges stay covered (5% clearance). Measured at 1080x1920 on a real photo under
-    // blur(16px): cards up to ~5 s stay above the frozen threshold; longer cards zoom into the blur and can measure frozen
-    const card = Boolean(s.filter && s.still), len = s.b - s.a, m = s.still ? p : e;
+    // stills and web pages move linearly at a constant speed (an eased move stalls at both ends, and that reads as
+    // frozen). A photo pushes in +0.01/s; a text-card backdrop (a still with a `filter`) pushes +0.08/s and drifts
+    // +4%/s, so its overflow grows as fast as its drift and the edges stay covered (5% clearance). Measured at 1080x1920
+    // on a real photo under blur(16px): cards up to ~5 s stay above the frozen threshold; longer cards zoom into the
+    // blur and can measure frozen
+    const card = Boolean(s.filter && s.still), len = s.b - s.a, m = s.still || s.web ? p : e;
     const [from, to] = s.push || (card ? [1.10, 1.10 + 0.08 * len] : s.still ? [1, 1 + 0.01 * len] : [1, 1.025]);
     const [dx0, dx1] = s.drift || (card ? [0, 4 * len] : [0, 0]);
     const scale = from + (to - from) * m, dx = dx0 + (dx1 - dx0) * m;
@@ -61,7 +63,7 @@
       // the real page, scrolled: drawn at the output width, moving from scroll[0] to scroll[1] (output px)
       await show(web, src);
       const [y0, y1] = s.scroll || [0, 0];
-      Object.assign(web.style, { opacity: 1, transform: `translateY(${-(y0 + (y1 - y0) * e)}px)` });
+      Object.assign(web.style, { opacity: 1, transform: `translateY(${-(y0 + (y1 - y0) * m)}px)` });
       foot.style.opacity = 0;
       panel.style.opacity = 0;
     } else if (s.panel) {

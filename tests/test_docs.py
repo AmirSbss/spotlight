@@ -36,6 +36,8 @@ def main():
     # the docs promise only what the kit does: a web shot ignores push, and a card over a still can still measure frozen
     assert not re.search(r"`web`[^\n]*\bpush\b", every), "a doc pairs a web shot with push, which the kit ignores"
     assert "never reads as frozen" not in every, "the docs promise that text cards never measure frozen"
+    # a web shot needs real speed: a slow scroll over a page's flat bands measures frozen
+    assert re.search(r"`web`[^\n]*px/s", refs["explain.md"]) and "px/s" in skill, "the docs give no minimum web scroll speed"
     # one way to run site.mjs everywhere: from spotlight-output/work, so site/ sits beside scene.html
     runs = re.findall(r"site\.mjs <url> (\S+)", every)
     assert runs and set(runs) == {"."}, f"site.mjs run with workdir {runs}, not ."

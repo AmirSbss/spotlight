@@ -92,4 +92,13 @@ echo 'window.SPOTLIGHT = { width: 540, height: 960, duration: 3, shots: [ { a: 0
 (cd "$q" && CAPTURE_WORKERS=1 node "$ROOT/skills/spotlight/scripts/capture.mjs" frames >/dev/null && (cd out && md5sum *.jpg) > serial.md5 \
   && CAPTURE_WORKERS=7 node "$ROOT/skills/spotlight/scripts/capture.mjs" frames >/dev/null && (cd out && md5sum -c --quiet ../serial.md5)) \
   || { echo "FAIL: parallel capture changed pixels"; exit 1; }
+# a slow web scroll (44 px over 4.4 s, like 150 px at 1080 wide) keeps moving: web shots scroll at a constant speed,
+# where an eased scroll stalls at both ends and reads as frozen
+v="$t/webslow"; mkdir -p "$v"; cp "$ROOT/skills/spotlight/kit/scene.html" "$ROOT/skills/spotlight/kit/kit.js" "$v/"; : > "$v/fonts.css"
+ln -s "$t/node_modules" "$v/node_modules"
+$IM -seed 5 -size 320x2400 plasma:fractal "$v/page.png"
+echo 'window.SPOTLIGHT = { width: 320, height: 568, duration: 4.4, grain: 0, shots: [ { a: 0, b: 4.4, web: "page.png", scroll: [0, 44] } ] };' > "$v/timeline.js"
+(cd "$v" && node "$ROOT/skills/spotlight/scripts/capture.mjs" frames >/dev/null && python3 "$ROOT/skills/spotlight/scripts/footage.py" encode out none v.mp4 >/dev/null)
+python3 "$ROOT/skills/spotlight/scripts/footage.py" check "$v/v.mp4" --out "$v/chk" >/dev/null || true
+python3 -c "import json,sys; f=json.load(open('$v/chk/check.json'))['frozen']; sys.exit(0 if not f['long_holds'] and f['total'] < 0.3 else print('FAIL: slow web scroll frozen', f['total'], 's, holds', f['holds']) or 1)"
 echo "kit: ok"
