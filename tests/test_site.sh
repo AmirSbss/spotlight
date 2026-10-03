@@ -42,4 +42,19 @@ assert ac[0] > 220 and 120 < ac[1] < 190 and ac[2] < 60, b"
 rm -rf site && timeout 150 node "$S" "file://$ROOT/tests/fixtures/site/infinite.html" . >/dev/null
 n=$(ls site/screens/*.png | wc -l); (( n <= 12 )) || { echo "FAIL: endless page gave $n screens"; exit 1; }
 read -r fh <<< "$($IM site/full.png -format '%h' info:)"; (( fh <= 12000 )) || { echo "FAIL: full page $fh px"; exit 1; }
+# over HTTP: a font that never arrives, a consent "Accept" that is a navigating link, a bare path, a dead address
+python3 "$ROOT/tests/site_server.py" > "$t/port" & srv=$!; trap 'kill $srv 2>/dev/null; rm -rf "$t"' EXIT
+for _ in $(seq 50); do [[ -s "$t/port" ]] && break; sleep 0.1; done; P="http://127.0.0.1:$(cat "$t/port")"
+rm -rf site; s0=$SECONDS
+node "$S" "$P/hang.html" . >/dev/null 2>&1 || { echo "FAIL: stalled font: site.mjs exited non-zero"; exit 1; }
+(( SECONDS - s0 <= 95 )) || { echo "FAIL: stalled font took $((SECONDS - s0)) s (cap 90)"; exit 1; }
+ls site/screens/01.png site/full.png >/dev/null 2>&1 || { echo "FAIL: stalled font: no screens or full.png"; exit 1; }
+rm -rf site; node "$S" "$P/consent-link.html" . >/dev/null 2>&1 || { echo "FAIL: consent link crashed site.mjs"; exit 1; }
+python3 -c "import json; c=json.load(open('site/copy.json')); assert c['title'] == 'Consent link', c"
+read -r r g b <<< "$($IM site/screens/01.png -format '%[fx:int(255*p{540,1850}.r)] %[fx:int(255*p{540,1850}.g)] %[fx:int(255*p{540,1850}.b)]' info:)"
+(( !(r > 240 && g < 20 && b > 240) )) || { echo "FAIL: consent banner still on screen"; exit 1; }
+rm -rf site; node "$S" "$ROOT/tests/fixtures/site/index.html" . >/dev/null 2>&1 || { echo "FAIL: a bare path failed"; exit 1; }
+python3 -c "import json; c=json.load(open('site/copy.json')); assert c['title'].startswith('Fixture Co'), c"
+if out=$(node "$S" "http://127.0.0.1:1/" . 2>&1); then echo "FAIL: a dead address exited 0"; exit 1; fi
+[[ $(wc -l <<< "$out") -le 2 ]] && grep -q "can't open" <<< "$out" || { echo "FAIL: dead address message: $out"; exit 1; }
 echo "site.mjs: ok"
