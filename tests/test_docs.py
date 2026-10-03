@@ -33,8 +33,7 @@ def main():
         assert f"`{field}`" in every or f"{field}:" in every, f"the skill never explains {field}"
     for out in ("video.mp4", "poster.jpg", "caption.txt", "plan.md", "sources.md", "spotlight-output"):
         assert out in skill, f"SKILL.md should name the deliverable {out}"
-    # the docs promise only what the kit does: a web shot ignores push, and a card over a still can still measure frozen
-    assert not re.search(r"`web`[^\n]*\bpush\b", every), "a doc pairs a web shot with push, which the kit ignores"
+    # the docs promise only what the kit does: a card over a still can still measure frozen
     assert "never reads as frozen" not in every, "the docs promise that text cards never measure frozen"
     # a web shot needs real speed: a slow scroll over a page's flat bands measures frozen
     assert re.search(r"`web`[^\n]*px/s", refs["explain.md"]) and "px/s" in skill, "the docs give no minimum web scroll speed"

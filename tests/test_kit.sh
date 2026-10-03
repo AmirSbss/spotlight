@@ -101,4 +101,15 @@ echo 'window.SPOTLIGHT = { width: 320, height: 568, duration: 4.4, grain: 0, sho
 (cd "$v" && node "$ROOT/skills/spotlight/scripts/capture.mjs" frames >/dev/null && python3 "$ROOT/skills/spotlight/scripts/footage.py" encode out none v.mp4 >/dev/null)
 python3 "$ROOT/skills/spotlight/scripts/footage.py" check "$v/v.mp4" --out "$v/chk" >/dev/null || true
 python3 -c "import json,sys; f=json.load(open('$v/chk/check.json'))['frozen']; sys.exit(0 if not f['long_holds'] and f['total'] < 0.3 else print('FAIL: slow web scroll frozen', f['total'], 's, holds', f['holds']) or 1)"
+# a web shot honours push and filter like any other shot: held on one spot it zooms, and brightness(.6) darkens it
+u="$t/webpush"; mkdir -p "$u"; cp "$ROOT/skills/spotlight/kit/scene.html" "$ROOT/skills/spotlight/kit/kit.js" "$u/"; : > "$u/fonts.css"
+ln -s "$t/node_modules" "$u/node_modules"
+$IM -seed 7 -size 320x1200 plasma:fractal "$u/page.png"
+echo 'window.SPOTLIGHT = { width: 320, height: 568, duration: 1, grain: 0, shots: [ { a: 0, b: 1, web: "page.png", scroll: [100, 100], push: [1, 1.3], filter: "brightness(.6)" } ] };' > "$u/timeline.js"
+(cd "$u" && node "$ROOT/skills/spotlight/scripts/capture.mjs" stills 0 0.99 >/dev/null)
+CMP=$(command -v magick >/dev/null && echo "magick compare" || echo compare)
+ae=$($CMP -metric AE -fuzz 5% "$u/check/t0.00.png" "$u/check/t0.99.png" null: 2>&1 | cut -d' ' -f1) || true
+(( ${ae%.*} > 1000 )) || { echo "FAIL: web shot ignored push ($ae px changed)"; exit 1; }
+lum() { $IM "$@" -colorspace gray -format '%[fx:mean]' info:; }
+python3 -c "import sys; r = $(lum "$u/check/t0.00.png") / $(lum "$u/page.png" -crop 320x568+0+100); sys.exit(0 if 0.45 < r < 0.75 else print('FAIL: web shot ignored filter, luma ratio', r) or 1)"
 echo "kit: ok"

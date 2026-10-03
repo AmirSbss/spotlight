@@ -51,6 +51,10 @@ def main():
         check(d / "endcard.mp4")
         r = json.loads((d / "check.json").read_text())
         assert len(r["frozen"]["long_holds"]) == 1, r["frozen"]
+        # --end-card is the end card's length: a start time passed by mistake (5 of 6 s) is called out, not silently trusted
+        check(d / "endcard.mp4", "--end-card", "5")
+        r = json.loads((d / "check.json").read_text())
+        assert any("--end-card" in w and "length" in w for w in r["warnings"]), r["warnings"]
 
         # no audio stream: loudness is None, not a failure
         assert r["loudness"] is None and r["failures"] == [], r

@@ -5,7 +5,7 @@
 //   clip: "frames/s01", n: 65          frames written by `footage.py shot`
 //   still: "stills/004.jpg"            a photo, an AI image or a background still
 //   web: "site/full.png", scroll: [y0, y1]   a captured page drawn at the output width and scrolled at a constant
-//                          speed (output px)
+//                          speed (output px); push, filter and grade work on it too
 //   drift: [x0, x1]        horizontal drift in % of width. Stills move linearly: a photo defaults to push 1 +0.01/s;
 //                          a still with a `filter` (text-card backdrop) to push 1.10 +0.08/s and drift 0 +4%/s
 // and optionally:
@@ -56,14 +56,18 @@
     // on a real photo under blur(16px): cards up to ~5 s stay above the frozen threshold; longer cards zoom into the
     // blur and can measure frozen
     const card = Boolean(s.filter && s.still), len = s.b - s.a, m = s.still || s.web ? p : e;
-    const [from, to] = s.push || (card ? [1.10, 1.10 + 0.08 * len] : s.still ? [1, 1 + 0.01 * len] : [1, 1.025]);
+    const [from, to] = s.push || (card ? [1.10, 1.10 + 0.08 * len] : s.still ? [1, 1 + 0.01 * len] : s.web ? [1, 1] : [1, 1.025]);
     const [dx0, dx1] = s.drift || (card ? [0, 4 * len] : [0, 0]);
     const scale = from + (to - from) * m, dx = dx0 + (dx1 - dx0) * m;
     if (s.web) {
       // the real page, scrolled: drawn at the output width, moving from scroll[0] to scroll[1] (output px)
       await show(web, src);
-      const [y0, y1] = s.scroll || [0, 0];
-      Object.assign(web.style, { opacity: 1, transform: `translateY(${-(y0 + (y1 - y0) * m)}px)` });
+      const [y0, y1] = s.scroll || [0, 0], y = y0 + (y1 - y0) * m;
+      // push zooms around the visible middle of the page; filter and grade work as on any other shot
+      Object.assign(web.style, {
+        opacity: 1, filter: [s.filter, s.grade].filter(Boolean).join(" ") || "none",
+        transformOrigin: `50% ${y + P.height / 2}px`, transform: `translateY(${-y}px) scale(${scale})`,
+      });
       foot.style.opacity = 0;
       panel.style.opacity = 0;
     } else if (s.panel) {

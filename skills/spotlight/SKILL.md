@@ -108,7 +108,7 @@ Pick the poster frame first (see Deliver) and copy the chosen `out/NNNNN.jpg` to
 
 It writes BT.709-tagged H.264 yuv420p + AAC with `+faststart`, exactly frames/30 seconds long, loudness-normalized to −14 LUFS (two-pass, true peak under −1.5). It refuses a frame folder that mixes PNG and JPG, has gaps in its numbering, or has a file that isn't really the format its name says, and it checks the frame count of what it wrote.
 
-Then run `python3 $F check $OUT/video.mp4 --end-card <end-card seconds> --out $OUT/work` and fix every failure and every hold it lists.
+Then run `python3 $F check $OUT/video.mp4 --end-card <s> --out $OUT/work` and fix every failure and every hold it lists. `--end-card` is the end card's length (`duration` minus `end` in `timeline.js`), not the time it starts.
 
 ## 7. Critic
 Follow `references/critic.md`: a fresh critic reviews the actual render, you fix, a new critic verifies. At most 3 rounds.

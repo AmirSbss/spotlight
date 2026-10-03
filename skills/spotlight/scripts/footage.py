@@ -314,6 +314,9 @@ def check(video, end_card=0.0, target=-14.0, out=None):
                 failures.append(f"integrated loudness {loud['I']} LUFS is more than 1 LU from {target}")
             if loud["LRA"] < 3:
                 warnings.append(f"loudness range {loud['LRA']} LU is under 3 (fine for calm pieces, flat for energetic ones)")
+    if end_card >= dur / 2:
+        warnings.append(f"--end-card {end_card:g} exempts {end_card:g} of {dur:.1f}s from the frozen check; it is the end card's "
+                        f"length (duration minus SPOTLIGHT.end), not the time it starts")
     if total > budget:
         warnings.append(f"frozen {total}s, over the budget of {budget}s (1s per 30s)")
     for s, e in long_holds:
@@ -371,7 +374,7 @@ def main():
     p.add_argument("--poster", help="image embedded as MP4 cover art")
     p = sub.add_parser("check", help="measure a render: frozen holds, loudness, frames, contact sheet")
     p.add_argument("video")
-    p.add_argument("--end-card", type=float, default=0.0, help="seconds at the end exempt from the frozen check")
+    p.add_argument("--end-card", type=float, default=0.0, help="the end card's length in seconds (duration minus SPOTLIGHT.end), exempt from the frozen check")
     p.add_argument("--target", type=float, default=-14.0)
     p.add_argument("--out")
     p = sub.add_parser("track", help="per-second loudness (+ tempo and strong cues with uv) of a music track")
