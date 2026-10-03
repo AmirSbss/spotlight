@@ -1,0 +1,3 @@
+spotlight made this video about itself, and every picture in it comes from its own repo. Point it at a website, some footage or a topic and it makes a short video that brags, promotes or explains, then checks its own render and has a fresh critic review it.
+
+github.com/AmirSbss/spotlight
