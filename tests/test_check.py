@@ -87,6 +87,8 @@ def main():
         assert r.returncode == 0, r.stderr
         t = json.loads(r.stdout)
         assert len(t["per_second"]) >= 9 and t["per_second"][7] - t["per_second"][2] > 15, t
+        # ...in the second it happens, and the soft opening reads as soft, not as silence (no 3 s window lag)
+        assert t["per_second"][5] - t["per_second"][4] > 15 and abs(t["per_second"][0] - t["per_second"][3]) < 2, t
     print("check: all checks passed")
 
 

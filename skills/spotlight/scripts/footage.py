@@ -13,6 +13,7 @@ Needs ffmpeg/ffprobe (with zscale) and ImageMagick 6 or 7. Python stdlib only.
 """
 import argparse
 import json
+import math
 import os
 import re
 import shutil
@@ -330,15 +331,16 @@ def check(video, end_card=0.0, target=-14.0, out=None):
 
 
 def track(audio):
-    # short-term loudness (3 s window) at every whole second: where a track is soft, where it lifts
+    # loudness of every whole second: where a track is soft, where it lifts. The power mean of the momentary (400 ms)
+    # values ending in that second, so a lift shows in the second it happens; the first windows, not full yet, are skipped
     r = subprocess.run(["ffmpeg", "-hide_banner", "-nostats", "-i", str(audio), "-map", "0:a:0", "-af", "ebur128", "-f", "null", "-"],
                        capture_output=True, text=True)
-    per_second, last = [], -1
-    for t, s in re.findall(r"t:\s*([0-9.]+).*?S:\s*(-?[0-9.]+|-inf)", r.stderr):
-        sec = int(float(t) + 1e-6)
-        if sec != last and abs(float(t) - round(float(t))) < 0.051:
-            per_second.append(float(s.replace("-inf", "-99")))
-            last = sec
+    power = {}
+    for t, m in re.findall(r"t:\s*([0-9.]+)\s.*?M:\s*(-?[0-9.]+|-inf)", r.stderr):
+        t = round(float(t), 1)
+        if t >= 0.4:
+            power.setdefault(int(t - 1e-6), []).append(10 ** (float(m.replace("-inf", "-120.7")) / 10))
+    per_second = [round(10 * math.log10(sum(v) / len(v)), 1) for _, v in sorted(power.items())]
     result = {"duration": round(float(json.loads(run(["ffprobe", "-v", "error", "-of", "json", "-show_format", audio]))["format"]["duration"]), 3),
               "per_second": per_second}
     analyzer = Path(__file__).with_name("analyze_music_cues.py")
