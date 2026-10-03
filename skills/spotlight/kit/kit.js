@@ -4,6 +4,9 @@
 // shots, in order, each { a, b } in seconds plus one of:
 //   clip: "frames/s01", n: 65          frames written by `footage.py shot`
 //   still: "stills/004.jpg"            a photo, an AI image or a background still
+//   web: "site/full.png", scroll: [y0, y1]   a captured page drawn at the output width and scrolled (output px)
+//   drift: [x0, x1]        horizontal drift in % of width. Stills with a `filter` (text-card backdrops) move linearly
+//                          and default to push 1.10 +0.05/s, drift -4% +2%/s: [1.10, 1.30] and [-4, 4] over 4 s
 // and optionally:
 //   panel: true            show the whole frame in a panel over a blurred copy (other-aspect media)
 //   push: [from, to]       scale over the shot (default [1, 1.025]); origin: "50% 64%"
@@ -29,7 +32,7 @@
   css.setProperty("--safe-bottom", `${Math.round(P.height * (portrait ? 0.2 : 0.1))}px`);
   css.setProperty("--side", `${Math.round(P.width * 0.066)}px`);
 
-  const foot = $("#foot"), panel = $("#panel"), grain = $("#grain");
+  const foot = $("#foot"), panel = $("#panel"), web = $("#web"), grain = $("#grain");
   const shown = new Map();
   async function show(img, src) {
     if (shown.get(img) === src) return;
@@ -44,10 +47,22 @@
   async function drawShot(t) {
     const s = P.shots.find((s) => t >= s.a && t < s.b) || P.shots[P.shots.length - 1];
     const p = clamp((t - s.a) / (s.b - s.a));
-    const src = s.clip ? `${s.clip}/${String(frameAt(s, t)).padStart(5, "0")}.jpg` : s.still;
-    const [from, to] = s.push || [1, 1.025];
-    const scale = from + (to - from) * inOutCubic(p);
-    if (s.panel) {
+    const e = inOutCubic(p);
+    const src = s.clip ? `${s.clip}/${String(frameAt(s, t)).padStart(5, "0")}.jpg` : (s.still || s.web);
+    // a text-card backdrop keeps a constant speed (push +0.05/s, drift +2%/s, linear): an eased or fixed-travel
+    // move slows near its ends and over a long card, and that reads as frozen
+    const card = Boolean(s.filter && s.still), len = s.b - s.a, m = card ? p : e;
+    const [from, to] = s.push || (card ? [1.10, 1.10 + 0.05 * len] : [1, 1.025]);
+    const [dx0, dx1] = s.drift || (card ? [-4, -4 + 2 * len] : [0, 0]);
+    const scale = from + (to - from) * m, dx = dx0 + (dx1 - dx0) * m;
+    if (s.web) {
+      // the real page, scrolled: drawn at the output width, moving from scroll[0] to scroll[1] (output px)
+      await show(web, src);
+      const [y0, y1] = s.scroll || [0, 0];
+      Object.assign(web.style, { opacity: 1, transform: `translateY(${-(y0 + (y1 - y0) * e)}px)` });
+      foot.style.opacity = 0;
+      panel.style.opacity = 0;
+    } else if (s.panel) {
       await Promise.all([show(foot, src), show(panel, src)]);
       const fit = Math.min(P.width / panel.naturalWidth, P.height / panel.naturalHeight);
       const w = panel.naturalWidth * fit, h = panel.naturalHeight * fit;
@@ -55,13 +70,15 @@
         width: `${w}px`, height: `${h}px`, left: `${(P.width - w) / 2}px`, top: `${(P.height - h) / 2}px`,
         opacity: 1, transform: `scale(${scale})`, filter: s.grade || "none",
       });
-      Object.assign(foot.style, { filter: "blur(26px) brightness(.5)", transform: "scale(1.25)", transformOrigin: "50% 50%" });
+      Object.assign(foot.style, { opacity: 1, filter: "blur(26px) brightness(.5)", transform: "scale(1.25)", transformOrigin: "50% 50%" });
+      web.style.opacity = 0;
     } else {
       await show(foot, src);
       panel.style.opacity = 0;
+      web.style.opacity = 0;
       Object.assign(foot.style, {
-        filter: [s.filter, s.grade].filter(Boolean).join(" ") || "none",
-        transformOrigin: s.origin || "50% 50%", transform: `scale(${scale})`,
+        opacity: 1, filter: [s.filter, s.grade].filter(Boolean).join(" ") || "none",
+        transformOrigin: s.origin || "50% 50%", transform: `translateX(${dx}%) scale(${scale})`,
       });
     }
     // grain moves every frame but is still a function of t
