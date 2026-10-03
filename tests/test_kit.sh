@@ -67,4 +67,22 @@ PY
 (cd "$c" && node "$ROOT/skills/spotlight/scripts/capture.mjs" frames >/dev/null && python3 "$ROOT/skills/spotlight/scripts/footage.py" encode out none card.mp4 >/dev/null)
 python3 "$ROOT/skills/spotlight/scripts/footage.py" check "$c/card.mp4" --out "$c/chk" >/dev/null || true
 python3 -c "import json,sys; r=json.load(open('$c/chk/check.json')); h=r['frozen']['long_holds']; sys.exit(0 if not h else print('FAIL: card holds', h) or 1)"
+# a natural-looking backdrop (seeded plasma, made here: no image is committed): a plain still, then a text card over its
+# blurred copy (blur(5px) at 320 px wide is blur(16px) at 1080). Stills move at a constant speed, so neither the still's
+# ends nor the card read as frozen; the high-contrast testsrc2 above would pass with far less motion
+n="$t/natural"; mkdir -p "$n"; cp "$ROOT/skills/spotlight/kit/scene.html" "$ROOT/skills/spotlight/kit/kit.js" "$n/"; : > "$n/fonts.css"
+ln -s "$t/node_modules" "$n/node_modules"
+$IM -seed 3 -size 640x1136 plasma:fractal "$n/bg.jpg"
+cat > "$n/timeline.js" <<'JS'
+window.SPOTLIGHT = { width: 320, height: 568, duration: 7, grain: 0,
+  shots: [ { a: 0, b: 3, still: "bg.jpg" }, { a: 3, b: 7, still: "bg.jpg", filter: "blur(5px) brightness(.42)" } ] };
+JS
+python3 - "$n/scene.html" <<'PY'
+import sys; p = sys.argv[1]; s = open(p).read()
+card = '<div class="cap mid" data-a="3.2" data-b="6.9"><div class="rule"></div><div class="row" data-at="3.3"><span class="n">01</span><span class="t">First</span></div><div class="row" data-at="3.5"><span class="n">02</span><span class="t">Second</span></div></div>'
+open(p, "w").write(s.replace('<div id="end">', card + '\n  <div id="end">'))
+PY
+(cd "$n" && node "$ROOT/skills/spotlight/scripts/capture.mjs" frames >/dev/null && python3 "$ROOT/skills/spotlight/scripts/footage.py" encode out none n.mp4 >/dev/null)
+python3 "$ROOT/skills/spotlight/scripts/footage.py" check "$n/n.mp4" --out "$n/chk" >/dev/null || true
+python3 -c "import json,sys; f=json.load(open('$n/chk/check.json'))['frozen']; sys.exit(0 if not f['long_holds'] and f['total'] < 0.3 else print('FAIL: natural backdrop frozen', f['total'], 's, holds', f['holds']) or 1)"
 echo "kit: ok"

@@ -5,11 +5,11 @@
 //   clip: "frames/s01", n: 65          frames written by `footage.py shot`
 //   still: "stills/004.jpg"            a photo, an AI image or a background still
 //   web: "site/full.png", scroll: [y0, y1]   a captured page drawn at the output width and scrolled (output px)
-//   drift: [x0, x1]        horizontal drift in % of width. Stills with a `filter` (text-card backdrops) move linearly
-//                          and default to push 1.10 +0.05/s, drift -4% +2%/s: [1.10, 1.30] and [-4, 4] over 4 s
+//   drift: [x0, x1]        horizontal drift in % of width. Stills move linearly: a photo defaults to push 1 +0.01/s;
+//                          a still with a `filter` (text-card backdrop) to push 1.10 +0.08/s and drift 0 +4%/s
 // and optionally:
 //   panel: true            show the whole frame in a panel over a blurred copy (other-aspect media)
-//   push: [from, to]       scale over the shot (default [1, 1.025]); origin: "50% 64%"
+//   push: [from, to]       scale over the shot (clips: [1, 1.025], eased; stills: see drift); origin: "50% 64%"
 //   filter: "blur(16px) brightness(.42)"   CSS filter (e.g. a dimmed background behind a text card)
 //   grade: "saturate(.9) contrast(1.05)"   colour match for AI stills and photos next to footage
 //   grain: 0.12            film grain for this shot (SPOTLIGHT.grain sets it for every shot)
@@ -49,11 +49,13 @@
     const p = clamp((t - s.a) / (s.b - s.a));
     const e = inOutCubic(p);
     const src = s.clip ? `${s.clip}/${String(frameAt(s, t)).padStart(5, "0")}.jpg` : (s.still || s.web);
-    // a text-card backdrop keeps a constant speed (push +0.05/s, drift +2%/s, linear): an eased or fixed-travel
-    // move slows near its ends and over a long card, and that reads as frozen
-    const card = Boolean(s.filter && s.still), len = s.b - s.a, m = card ? p : e;
-    const [from, to] = s.push || (card ? [1.10, 1.10 + 0.05 * len] : [1, 1.025]);
-    const [dx0, dx1] = s.drift || (card ? [-4, -4 + 2 * len] : [0, 0]);
+    // stills move linearly at a constant speed (an eased move stalls at both ends, and that reads as frozen): a photo
+    // pushes in +0.01/s; a text-card backdrop (a still with a `filter`) pushes +0.08/s and drifts +4%/s, so its overflow
+    // grows as fast as its drift and the edges stay covered (5% clearance). Measured at 1080x1920 on a real photo under
+    // blur(16px): cards up to ~5 s stay above the frozen threshold; longer cards zoom into the blur and can measure frozen
+    const card = Boolean(s.filter && s.still), len = s.b - s.a, m = s.still ? p : e;
+    const [from, to] = s.push || (card ? [1.10, 1.10 + 0.08 * len] : s.still ? [1, 1 + 0.01 * len] : [1, 1.025]);
+    const [dx0, dx1] = s.drift || (card ? [0, 4 * len] : [0, 0]);
     const scale = from + (to - from) * m, dx = dx0 + (dx1 - dx0) * m;
     if (s.web) {
       // the real page, scrolled: drawn at the output width, moving from scroll[0] to scroll[1] (output px)
