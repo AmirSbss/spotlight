@@ -93,7 +93,7 @@ For any agent that reads `SKILL.md`, the [skills CLI](https://github.com/vercel-
 npx skills add https://github.com/AmirSbss/spotlight --skill spotlight
 ```
 
-You can also copy `skills/spotlight/` into your agent's skills folder; [docs/other-agents.md](docs/other-agents.md) explains how. spotlight is built and tested on Claude Code, and Codex and Hermes support is in testing.
+You can also copy `skills/spotlight/` into your agent's skills folder; [docs/other-agents.md](docs/other-agents.md) explains how. It has been tested end to end on Claude Code, Codex CLI and Hermes Agent.
 
 Then check that the machine has what it needs:
 
