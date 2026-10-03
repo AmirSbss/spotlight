@@ -1,93 +1,54 @@
 ---
-name: promo
-description: Turn a folder of real photos and videos (plus an optional brief) into a short promo video with music, on-screen text in any language, a poster frame and a ready-to-post caption. Can generate or edit images through the codex image bridge to fill story gaps. Use when someone says "/promo", "make a promo from these photos/videos", "promo video", "make a reel from this footage", "ad from these clips", or points at a folder of media and wants a promo. Not for launch videos of a code project or website (that's /brag).
+name: spotlight
+description: Turn a website, a code project, footage or photos, and a description into a short video that brags (a launch), promotes a point (a promo), or explains a topic (a presentation as a video), with music, on-screen text in any language, a poster and a caption. Use when someone says "/spotlight", "make a video about this", "launch video", "brag about this", "promo from these photos/videos", "reel from this footage", "explainer video", "presentation video", or points at a site, folder or topic and wants a video.
 ---
 
-# /promo
+# spotlight
 
-Real footage in, a postable promo out. You cut the whole thing yourself: pick the shots, find the story, set the type, mix the sound, render. `footage.py` handles the fiddly footage steps (HEIC, rotation, HDR, frame rates, audio length) the same way every run.
+You make the whole video yourself: find the story, pick the material, set the type, mix the sound, render, check, and have it critiqued. The scripts and the render kit handle everything with sharp edges.
 
-It should look like it was cut by a good editor: the best shots only, clean type, a soundtrack that fits, nothing that doesn't earn its place.
+`<skill-dir>` is the folder holding this SKILL.md. Below, `F=<skill-dir>/scripts/footage.py`.
 
-`<skill-dir>` is the directory holding this SKILL.md (Claude Code prints it as "Base directory for this skill"). Below, `F=<skill-dir>/scripts/footage.py`.
-
-Usage: `/promo [folder] [options]`. Flags or plain language.
+Usage: `/spotlight [url | folder | files | project | "description"]… [options]`. Flags or plain language.
 
 | Option | Default |
 |---|---|
-| `[folder]` | current directory if it holds media; otherwise ask |
-| `--brief <file or text>` | `brief.md` / `brief.txt` in the folder |
-| `--lang <code>` | from the brief → text visible in the footage → ask |
-| `--tone <preset or freeform>` | inferred; `default` if nothing clearly fits |
-| `--format vertical\|landscape\|square` | vertical 1080×1920 (landscape 1920×1080, square 1080×1080), 30fps |
-| `--duration <s>` | ~20 (15–30) |
-| `--music <file>\|none` | an audio file in the folder, else a bundled track picked by tone |
+| `--mode brag\|promo\|explain` | inferred (table below) |
+| `--tone <preset or freeform>` | inferred per mode |
+| `--format vertical\|landscape\|square` | vertical for brag/promo, landscape for explain; 1080×1920 / 1920×1080 / 1080×1080, 30 fps |
+| `--duration <s>` | brag 20, promo 20, explain 90 |
+| `--lang <code>` | from the brief → the site's `lang` → text in the footage → ask |
+| `--music <file>\|none` | an audio file in the inputs, otherwise ask for a track or render with a silent track (a bundled library arrives in phase 2) |
 | `--no-ai` | AI images on when the bridge works |
 
-Write deliverables to `promo-output/` in the current directory (`promo-output-YYYY-MM-DD-HHmmss/` if that exists). Every intermediate goes in its `work/` subfolder. **Never modify, move or delete anything in the source folder.**
+Deliverables go to `spotlight-output/` (timestamped `spotlight-output-YYYY-MM-DD-HHmmss/` if it exists): `video.mp4` (poster embedded as cover art), `poster.jpg`, `caption.txt`, `plan.md`, `sources.md`, and `work/`. **Never modify, move or delete anything in the user's inputs.** Before anything else run `bash <skill-dir>/scripts/doctor.sh`; if it reports a missing required tool, say which and stop.
 
-Needs ffmpeg/ffprobe with zscale (tested on 5.1), ImageMagick (6 or 7), Python 3, Node and a Chromium. Check once at the start. If one is missing, say which and stop. Everything runs locally; only the optional AI images leave the machine (see below).
-
-## 1. Inventory and look
-
-1. List the folder's media, subfolders included: photos, videos, audio files (music candidates), `logo.*`, and a brief file. Skip dotfiles and any `promo-output*/` folder from earlier runs (`prep` drops them too).
-2. Run `python3 $F prep <out>/work <files...>`. It writes:
-   - `work/manifest.jsonl`: one line per file with `index`, `kind`, display `width`/`height` (rotation applied), `fps`, `duration`, `hdr`, `has_audio`, `cuts` (hard cuts inside a clip, in seconds), or `error` when a file can't be read. Tell the user which files failed and carry on without them.
-   - `work/stills/NNN.jpg`: every photo decoded (HEIC, GIF and BMP too), upright, converted to sRGB (iPhone photos are Display P3) and metadata stripped so GPS never travels.
-   - `work/sheets/`: contact sheets. `photos-NN.jpg` holds 12 photos labelled by index; `video-NNN.jpg` holds 12 frames per clip (the opening frame, then its scene cuts, up to 11, then evenly spaced frames) with the index and timestamp burned in.
-3. **Look at the sheets, not the originals.** Read every sheet first. Only then open full-size stills, or pull a frame (`python3 $F shot <clip> <t> 0.034 <W>x<H> 0.5 work/peek/` at the clip's own size from the manifest, which tone-maps HDR the way the render will), for the candidates. This keeps big folders affordable. Judge like an editor: sharp, steady, well lit, subject clear, something happening. Drop blurry, shaky, dark and near-duplicate shots.
-4. **The words.** Footage has no copy, so the text comes from:
-   - the brief (`--brief`, or `brief.md` / `brief.txt` in the folder): name, what it is / the offer, who it's for, CTA (phone, URL, address, handle), lines that must appear, colors, font, language, don'ts;
-   - text visible in the footage (signs, packaging, menus, screens);
-   - the brand's own website, when the user points you at it: scrape a few key pages (home, about, services, contact) and quote them. Prefer its own wording in the promo's language (many sites have `/fa`, `/ar` versions) over translating.
-   If the name, the CTA or the language is still unknown, ask **one** question that lists everything missing. Never guess a phone number, a price or an address.
-5. Before planning, answer: What is it (one sentence)? Who is it for? What's the offer? What's the hero shot? What order tells the story? What's the CTA? Which tone? What does the story need that the footage doesn't show? What's the one-line caption?
-
-## 2. Plan → `promo-plan.md`
-
-The angle, the hook, then a shot list. For each shot: source (manifest index + file; copy the path from that index's manifest line, never infer it from sort order), in/out points (clip) or motion (photo), on-screen text (verbatim from the brief or the footage), duration, transition. Then: tone, music track and the cue timestamps you'll cut on, an **AI assets table** (file · prompt · purpose · shot · footage-only fallback), and the CTA end card. Durations add up to the target.
-
-If the user points at one thing (a new dish, opening night, one product), make that the focus.
-
-**Shape:** Hook (the strongest moving shot, 1–2s, not a logo) → what it is → 2–4 best moments → the offer or proof → CTA end card, held ≥2s. A starting shape, not a template.
-
-Not enough material for the target length? Hold shots longer or make it shorter (15s is fine). Don't loop a shot, and don't pad with AI images.
-
-## Rules
-
-- **Short.** 15–30s; ~20s is the sweet spot.
-- **Hook first.** The first 1–2 seconds decide whether anyone keeps watching.
-- **Clear to a stranger.** After one viewing, they know what it is, who it's for and how to get it.
-- **Real footage first.** The user's material is the star. Best shots only; no abstract filler.
-- **Truthful.** Text comes only from the brief, the footage or the brand's own site. No invented prices, discounts, stats or testimonials. Third-party brands visible in the footage (logos on props, vehicles, screens) stay out of frame or get blurred, so the promo doesn't imply a partnership. AI imagery never depicts the actual product, place or people as something they aren't: no fake rooms, dishes or product shots. Edits only remove or clean up; they never extend or re-stage a real scene. Fully generated images appear only as clearly illustrative, title or background elements.
-- **Readable.** A line meant to be read stays fully on screen about 0.3s per word (at least ~1s), counted from when the whole line has landed. Fast in, then hold.
-- **Private stays private.** The footage, the render and the plan stay on the machine; never upload them. AI images send the prompt, and for edits the source still, to OpenAI through codex, so skip AI (`--no-ai`) for confidential footage. No EXIF locations, stray phone numbers or addresses (unless they're in the brief), and no documents or screens with personal data. Flag licence plates and bystanders' faces in the plan, and blur them if the user wants.
-- **Every frame postable.**
-
-## Tones
-
-Presets are defaults. A freeform direction ("90s VHS travel ad") refines or overrides them.
-
-| Tone | Feel | Cutting |
+## Modes
+| Mode | When | Read |
 |---|---|---|
-| `default` | Warm, upbeat, clean | 6–8 shots; soft cuts landing on beats |
-| `premium` | Slow, elegant, lots of space | 4–5 long shots; slow push-ins; slow fades |
-| `energetic` | Fast and punchy | 10–14 shots, some under 1s; hard cuts and zoom punches on beats |
-| `recap` | Event highlights building to a peak | Many short shots, rough chronology; crowd sound up at the peak |
-| `cinematic` | Trailer-scale | Wide shots, big type, dramatic wipes |
+| `brag` | a code project or a website, nothing else | `references/brag.md` |
+| `promo` | footage or photos are the main material | `references/promo.md` |
+| `explain` | a topic or argument, data files, or the user says presentation/explainer | `references/explain.md` |
 
-## 3. Build
+Inputs mix freely: a promo can quote the brand's site, an explainer can use footage. Read exactly one mode file (plus the Inventory and Footage sections of `references/promo.md` whenever footage or photos are in the mix), plus `references/quality-bar.md` and `references/critic.md` when you reach those steps.
 
-### Footage
+## 1. Gather
+- **Media:** `python3 $F prep spotlight-output/work <files…>` → manifest, upright sRGB stills, contact sheets (see the mode file).
+- **Website:** in `spotlight-output/work`, `npm i --prefix . playwright-core`, then `node <skill-dir>/scripts/site.mjs <url> . --size <W>x<H>` → `site/copy.json`, `site/brand.json`, `site/screens/`, `site/full.png`, `site/assets/`.
+- **Project:** read the code the way `references/brag.md` describes.
+- **Data:** read `*.csv` / `*.json` inputs; numbers on screen come only from them.
 
-- **Clips:** `python3 $F shot <clip> <start_s> <dur_s> <W>x<H> <cx> work/frames/<shot>/` writes exactly round(dur×30) upright JPGs (`00001.jpg`…), HDR tone-mapped to SDR, scaled to cover the frame and cropped at horizontal position `cx` (0 = left, 0.5 = center, 1 = right). Pick `cx` per shot so the subject stays in frame when landscape footage goes vertical. The manifest's `cuts` lists the hard cuts inside each clip; keep shots from straddling them. Start shots on stable, sharp moments.
-- **Photos:** use `work/stills/NNN.jpg` as `still` shots and let the kit move them with a slow push-in (`push`; `origin` sets where it zooms toward, so an off-centre origin reads as a drift). It doesn't pan a cropped photo sideways: for a landscape photo in a vertical promo use `panel`. Don't pre-render photo motion with `zoompan`; it jitters. Next to video, give photos a little grain (`grain: 0.06`) so they sit in the same world.
-- **Other-aspect media** (a landscape clip or photo in a vertical promo, or the reverse): `panel: true` shows the whole frame over a blurred copy of itself instead of cropping people out. Cut the clip at its own aspect (e.g. `1080x608` for 16:9 in vertical).
+## 2. Brief → `work/brief.md`
+What it is, who it's for, the one message, the one action (CTA), the facts you'll show **with their source** (brief, site page, footage file, data file), and the don'ts. If the name, the CTA or the language is still unknown, ask **one** question listing everything missing. Never guess a phone number, a price or an address.
 
+## 3. Plan → `plan.md`
+The angle, the hook, and a shot or section list. Each entry has its source (copy the path from the manifest or site files), in/out points or motion, its on-screen text (verbatim from the sources), its duration and its transition. Add the music and the cue times you'll cut on, plus the AI assets table. Durations must add up to the target. Write `sources.md` alongside: every line of on-screen text and every number → where it came from, plus the AI ledger (file, prompt, purpose, shot).
+
+## 4. Build
 ### The page
 
 Start from the kit: copy `<skill-dir>/kit/scene.html` and `<skill-dir>/kit/kit.js` into `work/`, then
-- write `work/timeline.js` as `window.PROMO = { width, height, duration, end, grain, fonts, shots: [...] }`. Shots come in order, each `{ a, b }` in seconds plus `clip: "frames/s01", n` (from `shot`) or `still: "stills/004.jpg"`, and optionally `panel`, `push: [from, to]`, `origin`, `filter` (e.g. a dimmed, blurred background behind a list card), `grade` and `grain`. `kit.js` documents every field;
+- write `work/timeline.js` as `window.SPOTLIGHT = { width, height, duration, end, grain, fonts, shots: [...] }`. Shots come in order, each `{ a, b }` in seconds plus `clip: "frames/s01", n` (from `shot`), `still: "stills/004.jpg"` or `web: "site/full.png", scroll: [y0, y1]` (a captured site page drawn at the output width and scrolled from `y0` to `y1`, in output pixels), and optionally `panel`, `push: [from, to]`, `origin`, `drift: [x0, x1]` (a sideways drift in % of width), `filter` (e.g. a dimmed, blurred background behind a list card), `grade` and `grain`. A still with a `filter` is a text-card backdrop: it gets push and drift by default and moves at a constant speed, so a card never reads as frozen. `kit.js` documents every field;
 - put the `@font-face` rules for the downloaded woff2 files in `work/fonts.css` (the template links it; a missing file fails the capture);
 - put the captions and the end card in `scene.html`: `.cap.low|.high|.mid` with `data-a`/`data-b` (on screen from/to), each line a `[data-at]` element (when it lands), `data-scrim="top|bottom"`. Set the brand tokens (`--ink`, `--paper`, `--accent`, fonts) in `:root`.
 The kit keeps every frame a pure function of t, looks up clip frames with the rounding fix (`floor((t - a) * 30 + 1e-6) + 1`), and scales type and safe zones to the format. So the same timeline renders vertical, landscape or square: change `width`/`height` and re-cut the clip frames at the new size. Anything custom you add must also be a pure function of t: no timers, and no CSS transitions or animations of its own.
@@ -110,13 +71,6 @@ Capture with the bundled script, run from `work/` after `npm i --prefix . playwr
 
 Use the logo file and brief colors if given (logo files often sit on a white box or carry a thin frame line; make the background transparent and check the edges); otherwise a restrained palette taken from the footage itself. Titles sit on the footage with a soft scrim for contrast, not on flat color slides.
 
-### Sound
-
-- **Music.** A `--music` file or an audio file in the folder wins. Otherwise pick from `<skill-dir>/assets/music/`: 5 upbeat "Business Moves" tracks, each with `cues/<track>.music-cues.md` (tempo, beat grid, strong cues). For `premium` or `cinematic`, tell the user the bundled tracks are upbeat and suggest they supply one. For a user track, get cues with `uv run --project <skill-dir>/scripts python <skill-dir>/scripts/analyze_music_cues.py <track> --output-json work/cues.json --output-md work/cues.md`.
-- **Cutting.** `energetic` and `recap` cut on beats, with major moments on strong cues (within ~0.1s). Other tones cut where the shot wants and let big moments land near a strong cue.
-- **Live sound.** Check `has_audio`. Keep sound that adds something (ambience, cheers, sizzle, a laugh) about 15 dB under the music, with 50–100 ms fades at each cut. Mute wind and handling noise. Don't cut in the middle of someone speaking; `silencedetect` shows the gaps.
-- Mix to `work/mix.wav` with the music faded in and out; the fade-out must finish by the video's last frame. Its length doesn't have to match: `encode` pads or trims it to the video, and a mix that runs long gets cut off at that point.
-
 ### AI images (codex bridge)
 
 Optional dependency: [gpt-image-bridge](https://github.com/oakplank/gpt-image-bridge) (installed at `~/.claude/skills/gpt-image-bridge/bin/gpt-image-2`, or `gpt-image-2` on `PATH`) plus a logged-in `codex`. Skip this section, and say so, if `--no-ai` is set, the bridge is missing, or `codex login status` isn't logged in. Edits need a bridge that accepts `--image`; if `grep -q -- --image <bridge>` finds nothing, use gap-fill only.
@@ -133,9 +87,13 @@ Optional dependency: [gpt-image-bridge](https://github.com/oakplank/gpt-image-br
 - Each call takes 4–6 minutes and uses the user's ChatGPT quota: **at most 3 per run** unless the user asks for more. Start them in the background right after the plan so they run while you build. Read every result, and reject anything off-brand, uncanny, carrying invented text, or against the Truthful rule. A failed or rejected image never blocks the render; use the plan's footage-only fallback.
 - **Label it:** list AI shots in the plan's AI table and in your report, and add a short "Includes AI-generated illustration" line to `caption.txt` (in its language). Some platforms ask for this.
 
+## 5. Sound
+Until the phase 2 sound layer lands, use the user's track. Pick its window with `python3 $F track <track>`: it prints per-second loudness, plus tempo and strong cues when `uv` is available. Cut on its beats for energetic tones, and let big moments land near strong cues. Keep useful live sound from clips about 15 dB under the music, with 50–100 ms fades. Mix to `work/mix.wav`; the fade-out must end by the last frame, and the music must not fade before the end card lands.
+
+## 6. Capture, encode, check
 ### Check before the full render
 
-Capture stills (`capture.mjs stills …`) in the middle of every shot, at every transition, and on the first frame after every cut (clips that were already edited hide dissolves, blurs and light leaks there), and look at them:
+Run `python3 $F check work/draft.mp4 --end-card <s>` on a quick draft render; fix every hold it lists before the full render. Capture stills (`capture.mjs stills …`) in the middle of every shot, at every transition, and on the first frame after every cut (clips that were already edited hide dissolves, blurs and light leaks there), and look at them:
 - Upright?
 - HDR clips not washed out?
 - Text joined and running in the right direction, numbers not reversed?
@@ -146,13 +104,28 @@ A plain crossfade between two busy shots makes a muddy double exposure: dip thro
 
 ### Encode
 
-Pick the poster frame first (see Deliver) and copy the chosen `work/out/NNNNN.jpg` to `<out>/promo.jpg`. Don't copy it over frame 0: a settled poster frame followed by the opening frames flashes for one frame at the start and on every loop. Then run `python3 $F encode work/out work/mix.wav <out>/promo.mp4 --poster <out>/promo.jpg`. `--poster` embeds it as cover art, which players and file browsers show. Pass `none` instead of the wav for a silent track (a video with no audio track turns into a GIF on Telegram).
+Pick the poster frame first (see Deliver) and copy the chosen `work/out/NNNNN.jpg` to `spotlight-output/poster.jpg`. Don't copy it over frame 0: a settled poster frame followed by the opening frames flashes for one frame at the start and on every loop. Then run `python3 $F encode work/out work/mix.wav spotlight-output/video.mp4 --poster spotlight-output/poster.jpg`. `--poster` embeds it as cover art, which players and file browsers show. Pass `none` instead of the wav for a silent track (a video with no audio track turns into a GIF on Telegram).
 
 It writes BT.709-tagged H.264 yuv420p + AAC with `+faststart`, exactly frames/30 seconds long, loudness-normalized to −14 LUFS (two-pass, true peak under −1.5). It refuses a frame folder that mixes PNG and JPG, has gaps in its numbering, or has a file that isn't really the format its name says, and it checks the frame count of what it wrote.
 
-## 4. Deliver
+Then run `python3 $F check spotlight-output/video.mp4 --end-card <end-card seconds>` and fix every failure and every hold it lists.
 
-- **`promo.jpg`:** the strongest *settled* frame (text fully in, not mid-transition). It's embedded as cover art. Platforms that let you pick a cover (Instagram, YouTube) should get this file.
-- **`caption.txt`:** in the promo's language, 1–3 sentences plus the CTA, and optionally 3–5 hashtags. Specific, in the tone, no "excited to share".
-- `promo-plan.md` and `work/` stay.
-- **Tell the user:** where the video and caption are, one sentence on the angle, which shots are AI-generated or AI-edited, and an offer to re-cut a shot, try another tone, or render another format (reusing `work/`).
+## 7. Critic
+Follow `references/critic.md`: a fresh critic reviews the actual render, you fix, a new critic verifies. At most 3 rounds.
+
+## 8. Deliver
+- **`poster.jpg`:** the strongest settled frame, embedded as cover art (`encode --poster`), never copied over frame 0.
+- **`caption.txt`:** in the video's language, 1–3 sentences plus the CTA, optional hashtags, and a short AI-illustration label if any AI image is used.
+- **`plan.md`, `sources.md`, `work/`** stay.
+- **Tell the user:** where the files are, the angle in one sentence, the `check` numbers, the critic's verdict, and which shots are AI. Offer a re-cut, another tone or another format (re-using `work/`).
+
+## Rules
+
+- **Length.** brag 15–25 s, promo 15–30 s, explain 60–180 s; ~20 s is the sweet spot for brag and promo.
+- **Hook first.** The first 1–2 seconds decide whether anyone keeps watching.
+- **Clear to a stranger.** After one viewing, they know what it is, who it's for and how to get it.
+- **Real footage first.** The user's material is the star. Best shots only; no abstract filler.
+- **Truthful.** Text and numbers come only from the brief, the footage, the brand's own site, the project or the data files, and each one is listed in `sources.md`. No invented prices, discounts, stats or testimonials. Third-party brands visible in the footage (logos on props, vehicles, screens) stay out of frame or get blurred, so the video doesn't imply a partnership. AI imagery never depicts the actual product, place or people as something they aren't: no fake rooms, dishes or product shots. Edits only remove or clean up; they never extend or re-stage a real scene. Fully generated images appear only as clearly illustrative, title or background elements.
+- **Readable.** A line meant to be read stays fully on screen about 0.3s per word (at least ~1s), counted from when the whole line has landed. Fast in, then hold.
+- **Private stays private.** The footage, the render and the plan stay on the machine; never upload them. AI images send the prompt, and for edits the source still, to OpenAI through codex, so skip AI (`--no-ai`) for confidential footage. No EXIF locations, stray phone numbers or addresses (unless they're in the brief), and no documents or screens with personal data. Flag licence plates and bystanders' faces in the plan, and blur them if the user wants.
+- **Every frame postable.**
