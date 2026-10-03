@@ -4,7 +4,7 @@ Input is a code project or a website. You built it; now brag. Adapted from /brag
 
 ## Inspect
 - **Project:** read the main page, styles (exact colours and fonts), README, routes and key components. Find the 2–3 beats of the product **in use**: entry → key action → result. Import or render the project's real components, styles, fonts and images instead of rebuilding them.
-- **Website:** in `spotlight-output/work`, after `npm i --prefix . playwright-core`, run `node <skill-dir>/scripts/site.mjs <url> . --size <W>x<H>`. Use `site/copy.json` for words, `site/brand.json` for colours, fonts and logo, and `site/screens/` and `site/full.png` for the page itself. A `web` shot scrolls the real page. Reuse its markup and assets over flat screenshots whenever the shot needs interaction.
+- **Website:** in `$OUT/work`, after `npm i --prefix . playwright-core`, run `node <skill-dir>/scripts/site.mjs <url> . --size <W>x<H>`. Use `site/copy.json` for words, `site/brand.json` for colours, fonts and logo, and `site/screens/` and `site/full.png` for the page itself. A `web` shot scrolls the real page. Reuse its markup and assets over flat screenshots whenever the shot needs interaction.
 - Answer: what is it, who is it for, what does it do for them, what sets it apart, the most impressive or funniest true claim, the visual hook, the one-line caption.
 
 ## Shape

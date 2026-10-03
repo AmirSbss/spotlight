@@ -3,7 +3,7 @@
 ## Inventory and look
 
 1. List the folder's media, subfolders included: photos, videos, audio files (music candidates), `logo.*`, and a brief file. Skip dotfiles and any `spotlight-output*/` folder from earlier runs (`prep` drops them too).
-2. Run `python3 $F prep spotlight-output/work <files...>`. It writes:
+2. Run `python3 $F prep $OUT/work <files...>`. It writes:
    - `work/manifest.jsonl`: one line per file with `index`, `kind`, display `width`/`height` (rotation applied), `fps`, `duration`, `hdr`, `has_audio`, `cuts` (hard cuts inside a clip, in seconds), or `error` when a file can't be read. Tell the user which files failed and carry on without them.
    - `work/stills/NNN.jpg`: every photo decoded (HEIC, GIF and BMP too), upright, converted to sRGB (iPhone photos are Display P3) and metadata stripped so GPS never travels.
    - `work/sheets/`: contact sheets. `photos-NN.jpg` holds 12 photos labelled by index; `video-NNN.jpg` holds 12 frames per clip (the opening frame, then its scene cuts, up to 11, then evenly spaced frames) with the index and timestamp burned in.

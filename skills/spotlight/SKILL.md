@@ -21,7 +21,7 @@ Usage: `/spotlight [url | folder | files | project | "description"]… [options]
 | `--music <file>\|none` | an audio file in the inputs, otherwise ask for a track or render with a silent track (a bundled library arrives in phase 2) |
 | `--no-ai` | AI images on when the bridge works |
 
-Deliverables go to `spotlight-output/` (timestamped `spotlight-output-YYYY-MM-DD-HHmmss/` if it exists): `video.mp4` (poster embedded as cover art), `poster.jpg`, `caption.txt`, `plan.md`, `sources.md`, and `work/`. **Never modify, move or delete anything in the user's inputs.** Before anything else run `bash <skill-dir>/scripts/doctor.sh`; if it reports a missing required tool, say which and stop.
+Deliverables go to `spotlight-output/` (timestamped `spotlight-output-YYYY-MM-DD-HHmmss/` if it exists): `video.mp4` (poster embedded as cover art), `poster.jpg`, `caption.txt`, `plan.md`, `sources.md`, and `work/`. Below, `OUT` is that folder's absolute path; create `$OUT/work` first and run the commands from there. **Never modify, move or delete anything in the user's inputs.** Before anything else run `bash <skill-dir>/scripts/doctor.sh`; if it reports a missing required tool, say which and stop.
 
 ## Modes
 | Mode | When | Read |
@@ -33,8 +33,8 @@ Deliverables go to `spotlight-output/` (timestamped `spotlight-output-YYYY-MM-DD
 Inputs mix freely: a promo can quote the brand's site, an explainer can use footage. Read exactly one mode file (plus the Inventory and Footage sections of `references/promo.md` whenever footage or photos are in the mix), plus `references/quality-bar.md` and `references/critic.md` when you reach those steps.
 
 ## 1. Gather
-- **Media:** `python3 $F prep spotlight-output/work <files…>` → manifest, upright sRGB stills, contact sheets (see the mode file).
-- **Website:** in `spotlight-output/work`, `npm i --prefix . playwright-core`, then `node <skill-dir>/scripts/site.mjs <url> . --size <W>x<H>` → `site/copy.json`, `site/brand.json`, `site/screens/`, `site/full.png`, `site/assets/`.
+- **Media:** `python3 $F prep $OUT/work <files…>` → manifest, upright sRGB stills, contact sheets (see the mode file).
+- **Website:** in `$OUT/work`, `npm i --prefix . playwright-core`, then `node <skill-dir>/scripts/site.mjs <url> . --size <W>x<H>` → `site/copy.json`, `site/brand.json`, `site/screens/`, `site/full.png`, `site/assets/`.
 - **Project:** read the code the way `references/brag.md` describes.
 - **Data:** read `*.csv` / `*.json` inputs; numbers on screen come only from them.
 
@@ -93,7 +93,7 @@ Until the phase 2 sound layer lands, use the user's track. Pick its window with 
 ## 6. Capture, encode, check
 ### Check before the full render
 
-Run `python3 $F check work/draft.mp4 --end-card <s>` on a quick draft render; fix every hold it lists before the full render. Capture stills (`capture.mjs stills …`) in the middle of every shot, at every transition, and on the first frame after every cut (clips that were already edited hide dissolves, blurs and light leaks there), and look at them:
+Run `python3 $F check draft.mp4 --end-card <s>` on a quick draft render; fix every hold it lists before the full render. Capture stills (`capture.mjs stills …`) in the middle of every shot, at every transition, and on the first frame after every cut (clips that were already edited hide dissolves, blurs and light leaks there), and look at them:
 - Upright?
 - HDR clips not washed out?
 - Text joined and running in the right direction, numbers not reversed?
@@ -104,11 +104,11 @@ A plain crossfade between two busy shots makes a muddy double exposure: dip thro
 
 ### Encode
 
-Pick the poster frame first (see Deliver) and copy the chosen `work/out/NNNNN.jpg` to `spotlight-output/poster.jpg`. Don't copy it over frame 0: a settled poster frame followed by the opening frames flashes for one frame at the start and on every loop. Then run `python3 $F encode work/out work/mix.wav spotlight-output/video.mp4 --poster spotlight-output/poster.jpg`. `--poster` embeds it as cover art, which players and file browsers show. Pass `none` instead of the wav for a silent track (a video with no audio track turns into a GIF on Telegram).
+Pick the poster frame first (see Deliver) and copy the chosen `out/NNNNN.jpg` to `$OUT/poster.jpg`. Don't copy it over frame 0: a settled poster frame followed by the opening frames flashes for one frame at the start and on every loop. Then run `python3 $F encode out mix.wav $OUT/video.mp4 --poster $OUT/poster.jpg`. `--poster` embeds it as cover art, which players and file browsers show. Pass `none` instead of the wav for a silent track (a video with no audio track turns into a GIF on Telegram).
 
 It writes BT.709-tagged H.264 yuv420p + AAC with `+faststart`, exactly frames/30 seconds long, loudness-normalized to −14 LUFS (two-pass, true peak under −1.5). It refuses a frame folder that mixes PNG and JPG, has gaps in its numbering, or has a file that isn't really the format its name says, and it checks the frame count of what it wrote.
 
-Then run `python3 $F check spotlight-output/video.mp4 --end-card <end-card seconds>` and fix every failure and every hold it lists.
+Then run `python3 $F check $OUT/video.mp4 --end-card <end-card seconds> --out $OUT/work` and fix every failure and every hold it lists.
 
 ## 7. Critic
 Follow `references/critic.md`: a fresh critic reviews the actual render, you fix, a new critic verifies. At most 3 rounds.

@@ -39,6 +39,11 @@ def main():
     # one way to run site.mjs everywhere: from spotlight-output/work, so site/ sits beside scene.html
     runs = re.findall(r"site\.mjs <url> (\S+)", every)
     assert runs and set(runs) == {"."}, f"site.mjs run with workdir {runs}, not ."
+    # commands use the run's output folder ($OUT: spotlight-output/ or its timestamped twin), never a hard-coded one,
+    # and checking the final video writes its report into work/, not next to the deliverables
+    assert not re.search(r"\$F \w+ [^`\n]*spotlight-output/", every), "a footage.py command hard-codes spotlight-output/"
+    final = re.findall(r"\$F check \$OUT/video\.mp4[^`\n]*", skill)
+    assert final and all("--out $OUT/work" in c for c in final), final
     for stale in ("promo-output", "/promo ", "window.PROMO", "skills/promo", "PROMO_SRGB_ICC"):
         assert stale not in every, f"stale reference: {stale}"
     print("docs: all checks passed")
