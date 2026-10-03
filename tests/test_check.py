@@ -80,6 +80,13 @@ def main():
            "-c:v", "libx264", "-pix_fmt", "yuv420p", "-c:a", "aac", d / "short.mp4")
         check(d / "short.mp4", "--out", d / "short")
         assert (d / "short" / "check-sheet.jpg").exists()
+
+        # track: per-second short-term loudness shows where the music lifts
+        ff("-f", "lavfi", "-i", "aevalsrc='if(lt(t,5),0.01,0.5)*sin(2*PI*220*t)':s=48000:d=10", d / "lift.wav")
+        r = subprocess.run([sys.executable, F, "track", d / "lift.wav", "--json"], capture_output=True, text=True)
+        assert r.returncode == 0, r.stderr
+        t = json.loads(r.stdout)
+        assert len(t["per_second"]) >= 9 and t["per_second"][7] - t["per_second"][2] > 15, t
     print("check: all checks passed")
 
 

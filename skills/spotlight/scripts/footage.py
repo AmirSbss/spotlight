@@ -7,6 +7,7 @@
                                                    PNG/JPG frames + mix -> BT.709 H.264/AAC mp4 at -14 LUFS (two-pass),
                                                    with the poster embedded as cover art
   check  <video> [--end-card s] [--target LUFS] [--out dir]    frozen holds, loudness, frames, contact sheet -> check.json
+  track  <audio> [--json]                                     per-second loudness (+ tempo, strong cues) for picking a music window
 
 Needs ffmpeg/ffprobe (with zscale) and ImageMagick 6 or 7. Python stdlib only.
 """
@@ -17,6 +18,7 @@ import re
 import shutil
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 
 FPS = 30
@@ -324,6 +326,31 @@ def check(video, end_card=0.0, target=-14.0, out=None):
     return result
 
 
+def track(audio):
+    # short-term loudness (3 s window) at every whole second: where a track is soft, where it lifts
+    r = subprocess.run(["ffmpeg", "-hide_banner", "-nostats", "-i", str(audio), "-map", "0:a:0", "-af", "ebur128", "-f", "null", "-"],
+                       capture_output=True, text=True)
+    per_second, last = [], -1
+    for t, s in re.findall(r"t:\s*([0-9.]+).*?S:\s*(-?[0-9.]+|-inf)", r.stderr):
+        sec = int(float(t) + 1e-6)
+        if sec != last and abs(float(t) - round(float(t))) < 0.051:
+            per_second.append(float(s.replace("-inf", "-99")))
+            last = sec
+    result = {"duration": round(float(json.loads(run(["ffprobe", "-v", "error", "-of", "json", "-show_format", audio]))["format"]["duration"]), 3),
+              "per_second": per_second}
+    analyzer = Path(__file__).with_name("analyze_music_cues.py")
+    if shutil.which("uv") and analyzer.exists():
+        with tempfile.TemporaryDirectory() as tmp:
+            cue = subprocess.run(["uv", "run", "--project", str(analyzer.parent), "python", str(analyzer), str(audio),
+                                  "--output-json", f"{tmp}/c.json", "--output-md", f"{tmp}/c.md", "--window-duration", "60"],
+                                 capture_output=True, text=True)
+            if cue.returncode == 0:
+                c = json.loads(Path(f"{tmp}/c.json").read_text())
+                result["tempo"] = c.get("tempo")
+                result["strong_cues"] = sorted(round(x["time"], 2) for x in c.get("strongCues", []) if x["time"] < 60)
+    return result
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = ap.add_subparsers(dest="cmd", required=True)
@@ -342,6 +369,9 @@ def main():
     p.add_argument("--end-card", type=float, default=0.0, help="seconds at the end exempt from the frozen check")
     p.add_argument("--target", type=float, default=-14.0)
     p.add_argument("--out")
+    p = sub.add_parser("track", help="per-second loudness (+ tempo and strong cues with uv) of a music track")
+    p.add_argument("audio")
+    p.add_argument("--json", action="store_true")
     a = ap.parse_args()
     try:
         if a.cmd == "prep":
@@ -360,6 +390,14 @@ def main():
                 print("FAIL:", f)
             if r["failures"]:
                 raise SystemExit(1)
+        elif a.cmd == "track":
+            r = track(a.audio)
+            if a.json:
+                print(json.dumps(r))
+            else:
+                print(" ".join(f"{i}:{v:.0f}" for i, v in enumerate(r["per_second"])))
+                if "tempo" in r:
+                    print("tempo", r["tempo"], "strong cues", r["strong_cues"])
         elif a.cmd == "encode":
             encode(a.frames, a.mix, a.dst, a.poster)
             print(a.dst)
