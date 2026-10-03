@@ -85,4 +85,11 @@ PY
 (cd "$n" && node "$ROOT/skills/spotlight/scripts/capture.mjs" frames >/dev/null && python3 "$ROOT/skills/spotlight/scripts/footage.py" encode out none n.mp4 >/dev/null)
 python3 "$ROOT/skills/spotlight/scripts/footage.py" check "$n/n.mp4" --out "$n/chk" >/dev/null || true
 python3 -c "import json,sys; f=json.load(open('$n/chk/check.json'))['frozen']; sys.exit(0 if not f['long_holds'] and f['total'] < 0.3 else print('FAIL: natural backdrop frozen', f['total'], 's, holds', f['holds']) or 1)"
+# parallel capture changes no pixel, even when only some workers ever render a web shot
+q="$t/purity"; mkdir -p "$q"; cp "$ROOT/skills/spotlight/kit/scene.html" "$ROOT/skills/spotlight/kit/kit.js" "$q/"; : > "$q/fonts.css"
+ln -s "$t/node_modules" "$q/node_modules"; cp "$k/full.png" "$t/card/bg.jpg" "$q/"; $IM -size 640x360 xc:red "$q/wide.png"
+echo 'window.SPOTLIGHT = { width: 540, height: 960, duration: 3, shots: [ { a: 0, b: 1, still: "bg.jpg", filter: "blur(8px) brightness(.42)" }, { a: 1, b: 2, web: "full.png", scroll: [0, 600] }, { a: 2, b: 3, still: "wide.png", panel: true } ] };' > "$q/timeline.js"
+(cd "$q" && CAPTURE_WORKERS=1 node "$ROOT/skills/spotlight/scripts/capture.mjs" frames >/dev/null && (cd out && md5sum *.jpg) > serial.md5 \
+  && CAPTURE_WORKERS=7 node "$ROOT/skills/spotlight/scripts/capture.mjs" frames >/dev/null && (cd out && md5sum -c --quiet ../serial.md5)) \
+  || { echo "FAIL: parallel capture changed pixels"; exit 1; }
 echo "kit: ok"

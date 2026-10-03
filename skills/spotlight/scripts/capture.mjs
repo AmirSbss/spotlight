@@ -59,6 +59,12 @@ if (mode === "stills") {
   let done = 0;
   await Promise.all(Array.from({ length: workers }, async (_, w) => {
     const { page, spec } = w === 0 ? first : await openPage();
+    // paint the 3 frames before this chunk first (discarded): Chromium rasters a layer whose transform keeps changing
+    // differently once it has seen it change, so a worker starting mid-shot must share the serial run's recent history
+    for (let i = Math.max(0, w * chunk - 3); i < w * chunk; i++) {
+      await page.evaluate((t) => window.render(t), i / spec.fps);
+      await page.screenshot({ type: "jpeg", quality: 95 });
+    }
     for (let i = w * chunk; i < Math.min(total, (w + 1) * chunk); i++) {
       await page.evaluate((t) => window.render(t), i / spec.fps);
       await page.screenshot({ path: `out/${String(i).padStart(5, "0")}.jpg`, type: "jpeg", quality: 95 });
