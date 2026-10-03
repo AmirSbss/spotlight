@@ -33,6 +33,12 @@ def main():
         assert f"`{field}`" in every or f"{field}:" in every, f"the skill never explains {field}"
     for out in ("video.mp4", "poster.jpg", "caption.txt", "plan.md", "sources.md", "spotlight-output"):
         assert out in skill, f"SKILL.md should name the deliverable {out}"
+    # the docs promise only what the kit does: a web shot ignores push, and a card over a still can still measure frozen
+    assert not re.search(r"`web`[^\n]*\bpush\b", every), "a doc pairs a web shot with push, which the kit ignores"
+    assert "never reads as frozen" not in every, "the docs promise that text cards never measure frozen"
+    # one way to run site.mjs everywhere: from spotlight-output/work, so site/ sits beside scene.html
+    runs = re.findall(r"site\.mjs <url> (\S+)", every)
+    assert runs and set(runs) == {"."}, f"site.mjs run with workdir {runs}, not ."
     for stale in ("promo-output", "/promo ", "window.PROMO", "skills/promo", "PROMO_SRGB_ICC"):
         assert stale not in every, f"stale reference: {stale}"
     print("docs: all checks passed")
