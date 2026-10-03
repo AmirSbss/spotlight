@@ -117,6 +117,7 @@ Phase 1 of 4 is done. That covers the three modes, website capture, the check an
 
 ```bash
 python3 tests/test_footage.py && python3 tests/test_check.py && python3 tests/test_docs.py
+uv run --project skills/spotlight/scripts python tests/test_mix.py
 bash tests/test_capture.sh && bash tests/test_kit.sh && bash tests/test_site.sh
 bash tests/test_doctor.sh && bash tests/test_bridge_image.sh
 ```
