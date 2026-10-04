@@ -5,7 +5,7 @@ Point your AI agent at a website, some footage or a topic, and get back a finish
 [![spotlight's demo: a launch video spotlight made about its own repo](examples/demo/preview.gif)](examples/demo/video.mp4)
 
 *spotlight made this video about itself, using only what's in this repo. [Watch it with sound](examples/demo/video.mp4).*
-
+[![spotlight on AI Agents Listing](https://aiagentslisting.com/spotlight/badge.svg?claim=bfc5ca4a2e45ea7bb00e84ae5aa10e9a)](https://aiagentslisting.com/mcp/spotlight)
 spotlight is a skill for AI coding agents. You give it whatever you have: a URL, a folder of phone videos and photos, a code project, a spreadsheet, or a sentence about what you want. The agent works out the story, picks the shots and writes the on-screen text in your language (Persian, Arabic and other right-to-left scripts included). Then it cuts to the music, renders, measures the result, and has a second agent critique it before you see it.
 
 There are three modes:
