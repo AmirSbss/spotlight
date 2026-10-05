@@ -24,9 +24,9 @@ Needs ffmpeg. The numpy/scipy/soundfile deps come with `uv run --project <this f
 """
 import argparse
 import json
+import math
 import re
 import subprocess
-import sys
 import tempfile
 from pathlib import Path
 
@@ -40,6 +40,7 @@ DUCK_DB, DUCK_RAMP = -8.0, 0.15
 TARGET_DB, CAP_DB = 3.5, 6.0
 HF_BAND, HF_LIFT_CAP = (2000.0, 8000.0), 4.0
 FLOOR_DBFS = -26.0        # an effect never lands below this in its own band, however quiet the bed
+FLOOR_UNDER_PEAK = -12.0  # ... nor 12 dB under the bed's broadband peak: a band the music leaves empty
 BODY = 0.15               # the window an effect is judged in
 
 
@@ -141,9 +142,13 @@ def solve_sfx(sfx, t, bed, target_db, cap_db):
         g = 10 ** (cap_db / 20) * bed_peak / sfx_peak
         if g < gain:
             gain, why = g, ("peak cap", cap_db)
-    floor = 10 ** (FLOOR_DBFS / 20) / sfx_band
-    if floor > gain:  # quiet passage: the lift target would solve the effect away to nothing
-        gain, why = floor, ("floor", FLOOR_DBFS)
+    # the floor, like the cap, is anchored to the local music peak: a bass-only bed must not solve a
+    # tick away to nothing just because the tick's band is empty. Absolute -26 dBFS covers true silence.
+    floor_level = max(10 ** (FLOOR_DBFS / 20), bed_peak * 10 ** (FLOOR_UNDER_PEAK / 20)) if bed_peak > 1e-6 \
+        else 10 ** (FLOOR_DBFS / 20)
+    floor = floor_level / sfx_band
+    if floor > gain:
+        gain, why = floor, ("floor", lift_db(floor_level, 1.0))
     report = {"gain_db": lift_db(gain, 1.0), "band": (lo, hi), "why": why,
               "in_band": lift_db(sfx_band * gain, bed_band) if bed_band > 1e-6 else None}
     report["hf"] = lift_db(sfx_hf * gain, bed_hf) if bed_hf > 1e-9 else None
@@ -156,24 +161,31 @@ def mix(cfg, outdir):
     with tempfile.TemporaryDirectory(prefix="spotlight mix ") as tmp:
         ends = [float(e["t"]) + float(e.get("dur") or 0) for e in cfg.get("clips") or []]
         ends += [float(e["t"]) for e in cfg.get("sfx") or []] + [float(v["t"]) for v in cfg.get("voice") or []]
-        duration = float(cfg.get("duration") or (max(ends) + 0.5 if ends else 0))
+        music = cfg.get("music") or {}
+        track = decode(music["file"], tmp, "music") if music.get("file") else None
+        start = round(float(music.get("start") or 0) * SR) if track is not None else 0
+        # with no explicit duration, the music runs out where it runs out, unless an event sits later
+        duration = float(cfg.get("duration") or 0)
+        if not duration:
+            candidates = ([len(track) / SR - start / SR] if track is not None else []) + [e + 0.5 for e in ends]
+            duration = max(candidates) if candidates else 0
         if duration <= 0:
             raise RuntimeError("nothing to mix: no duration, no music and no events")
         n = round(duration * SR)
-        music = cfg.get("music") or {}
         bed = np.zeros((n, 2), dtype=np.float32)
         report = [f"duration {duration:.2f}s"]
-        if music.get("file"):
-            track = decode(music["file"], tmp, "music")
-            start = round(float(music.get("start") or 0) * SR)
+        if track is not None:
             seg = track[start:start + n]
             bed[:len(seg)] = seg        # a track shorter than the video simply runs out, like a real DJ
             bed_lufs = float(music.get("gain_lufs") or BED_LUFS)
-            gain = bed_lufs - integrated_lufs(bed, tmp, "bed")
+            measured = integrated_lufs(bed, tmp, "bed")
+            gain = bed_lufs - measured if math.isfinite(measured) else 0.0  # a silent bed stays silent
             bed *= 10 ** (gain / 20)
             report.append(f"music: {Path(music['file']).name} window {start / SR:.2f}-{duration:.2f}s "
-                          f"-> {bed_lufs:.1f} LUFS bed (gain {gain:+.1f} dB), "
-                          f"fades {float(music.get('fade_in') or 0):.2f}/{float(music.get('fade_out') or 0):.2f}s")
+                          f"-> {bed_lufs:.1f} LUFS bed (gain {gain:+.1f} dB"
+                          + (", bed measures silent" if not math.isfinite(measured) else "")
+                          + f"), fades {float(music.get('fade_in') or 0):.2f}/"
+                            f"{float(music.get('fade_out') or 0):.2f}s")
             for key, ramp in (("fade_in", np.linspace(0.0, 1.0, round(float(music.get("fade_in") or 0) * SR), dtype=np.float32)),
                               ("fade_out", np.linspace(1.0, 0.0, round(float(music.get("fade_out") or 0) * SR), dtype=np.float32))):
                 if len(ramp) > 0:
@@ -205,10 +217,14 @@ def mix(cfg, outdir):
             place(mixdown, s, t, gain)
             why, value = r["why"]
             lo, hi = r["band"]
-            lift = f"{r['in_band']:+.1f} dB ({why} {value:+.1f})" if r["in_band"] is not None \
-                else f"n/a over a silent bed ({why} {value:+.1f})"
+            if why == "floor":  # a lift ratio over an (near-)empty band reads as nonsense numbers
+                lift = f"{value:+.1f} dBFS (floor)"
+            elif r["in_band"] is not None:
+                lift = f"{r['in_band']:+.1f} dB ({why} {value:+.1f})"
+            else:
+                lift = f"n/a over a silent bed ({why} {value:+.1f})"
             line = (f"sfx {i + 1} {Path(e['file']).name} @ {t:.2f}s  gain {r['gain_db']:+.1f} dB  "
-                    f"in-band {lift}; {lo:.0f}-{hi:.0f} Hz, {BODY * 1000:.0f} ms body)")
+                    f"in-band {lift}; {lo:.0f}-{hi:.0f} Hz, {BODY * 1000:.0f} ms body")
             if r["hf"] is not None:
                 line += f"  hf {r['hf']:+.1f} dB"
             if r["peak"] is not None:
@@ -227,7 +243,10 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("mix_json", help="work/mix.json")
     a = ap.parse_args()
-    cfg = json.loads(Path(a.mix_json).read_text())
+    try:
+        cfg = json.loads(Path(a.mix_json).read_text())
+    except (json.JSONDecodeError, OSError) as e:
+        raise SystemExit(f"mix.py: cannot read {a.mix_json}: {e}")
     try:
         report = mix(cfg, Path(a.mix_json).parent)
     except (RuntimeError, KeyError, OSError) as e:
