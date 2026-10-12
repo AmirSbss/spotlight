@@ -59,4 +59,4 @@ Voice: Piper `en_US-ljspeech-high`, public domain (LJ Speech). voice.py printed 
 None.
 
 ## Music and effects
-`calm.mp3` and the effects are spotlight's bundled CC0 library (README.md: "A bundled CC0 library (five moods of music and 18 effects)").
+Music: `calm.mp3`, "Documentary Music - Small Signs of Change", music by Sascha Ende at ende.app (CC BY 4.0). The effects are spotlight's bundled CC0 effects.

@@ -1,15 +1,15 @@
-# Using spotlight with other agents
+# How to use spotlight with Codex CLI, Hermes Agent and other AI agents
 
-spotlight is a plain [Agent Skill](https://agentskills.io): a `SKILL.md` with instructions, a few reference files the agent reads when it needs them, and scripts it runs from the shell. Any agent that can read files and run long shell commands can use it.
+spotlight makes short videos (launch videos, promo reels and narrated explainers), and it isn't tied to Claude Code. It is a plain [Agent Skill](https://agentskills.io): a `SKILL.md` with instructions, a few reference files the agent reads when it needs them, and scripts it runs from the shell. Any AI coding agent that can read files and run long shell commands can use it. This page covers what the agent needs, how to install spotlight for Codex CLI and Hermes Agent, how to run it unattended, and what was tested.
 
-## What the agent needs
+## What does an agent need to run spotlight?
 
 - Shell access with ffmpeg, ImageMagick, Python 3, Node, Chromium and uv installed. Run `bash skills/spotlight/scripts/doctor.sh` to check.
 - Permission to run commands outside a sandbox. spotlight installs `playwright-core` with npm, launches Chromium and writes frames to disk, and a sandbox without network or process access blocks that.
 - Time. A 25-second narrated explainer with a chart and a globe took Codex about 12 minutes and Hermes about 27; Claude Code takes 30 to 60 with a full critic loop. Single commands (a frame capture, an encode) can run for a few minutes, so long commands must be allowed.
 - Optionally, a way to start a fresh sub-agent, which spotlight uses as the critic. Without one, the agent reviews its own render on freshly extracted frames against the same checklist. In our latest runs Claude Code started a sub-agent critic, while Codex and Hermes reviewed their own renders.
 
-## Installing
+## How do I install spotlight for Codex or Hermes?
 
 The [skills CLI](https://github.com/vercel-labs/skills) installs spotlight for the agents you name:
 
@@ -31,7 +31,7 @@ Inside this repo, agents that look for project skills find spotlight through the
 
 For an agent with no skills support, paste `skills/spotlight/SKILL.md` into its instructions and keep the repo on disk, so it can open `skills/spotlight/references/` and run `skills/spotlight/scripts/`.
 
-## Running it
+## How do I run it, including headless?
 
 Interactively, ask for a video in plain words ("make a launch video for https://your-app.com") or name the skill: `/spotlight` in Claude Code and Hermes, `$spotlight` in Codex.
 
@@ -52,7 +52,7 @@ claude -p --max-turns 300 '/spotlight https://your-app.com --mode brag (headless
 
 Run these only in a folder and on a machine where you're happy for the agent to run commands without asking.
 
-## Tested
+## Which agents were tested?
 
 On 2026-10-12, with sound and visuals in place, Codex and Hermes each made a 25-second narrated explainer from the same headless prompt and the same two small CSV files: a bar chart of the data, a globe with the routes drawn between real cities, and Piper narration over a bundled track. Claude Code made the README's demo and the examples in `examples/`. Every run went through `footage.py check` and a critic review.
 

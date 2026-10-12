@@ -36,5 +36,8 @@ No prices, offers, hours, addresses or claims are on screen.
 
 MAHOOR COFFEE and @mahoor_hills stay in Latin, as in the logo.
 
+## Music and effects
+Music: `warm.mp3`, "Sunday Morning Coffee", music by Sascha Ende at ende.app (CC BY 4.0), track 20.76–40.76 s. Effects: whoosh-1 and pop-2 from spotlight's bundled CC0 effects. The clips' own sound is not used.
+
 ## AI ledger
 None.

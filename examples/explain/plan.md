@@ -20,8 +20,11 @@ their `file`/`sheet` keys are local paths. The README page drops the badge and i
 | Take | 48.3–52.8 | src/readme ("Ground rules", blurred) | scroll 9900→10920 (keeps going under the end card; the page's end never shows) | "A video ships only after it passes its own checks" / README.md · Ground rules | t1 @ 48.5 | dip 0.4 |
 | End | 52.8–60.0 | end card (dark), breathes 1.00→1.03 | — | spotlight / Point your AI agent at a website, some footage or a topic, and get back a finished short video. / github.com/AmirSbss/spotlight | e1 @ 53.3 | wipe |
 
-**Music:** `assets/music/calm.mp3` (explain `clear`), track 18.5–78.5 s (the steady groove starts at ~18 s, so frame 0 already
-moves), fade in 0.2, fade out 0.8 (the last 0.8 s, after the end card has landed). Ducked under the narration by mix.py.
+**Music:** `assets/music/calm.mp3` (explain `clear`), "Documentary Music - Small Signs of Change", music by Sascha Ende at ende.app (CC BY 4.0), track 11.84–71.84 s.
+- The window starts on the track's first strong cue, and the track builds gently under the narration.
+- It fades in over 0.2 s and out over the last 0.8 s, after the end card has landed.
+- mix.py ducks it under the narration.
+- It replaced the first cut's CC0 track after the owner found that one harsh. The frames are unchanged.
 **Cue times cut on:** the cuts follow the narration, not the beat (calm, clear tone).
 **Effects (sparse, clear tone):** 3.6 whoosh-1 (peak; section 01) · 10.75 pop-3 (chart values land) · 18.3 whoosh-1 (peak; section 02)
 · 34.65 pop-2 (verdict lands) · 36.9 whoosh-1 (peak; section 03) · 46.3 chime-2 (SHIP: done) · 52.8 whoosh-3 (peak; end card reveal).

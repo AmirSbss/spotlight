@@ -22,10 +22,11 @@
 
 Captions sit 190 px above the template's bottom safe line, clear of Instagram's caption overlay.
 
-**Music:** `assets/music/warm-acoustic.mp3` (promo `default`, a café), track 46.25–66.25 s.
-- This is the full band, past the stop-time intro and clear of 15–45 s, which is still waiting for a listen for vocals.
-- It fades in over 0.15 s and out over 0.8 s.
-- At 120 BPM, its strong hits fall on every cut: 2.0, 4.5, 7.5, 10.0, 13.0 and 16.0.
+**Music:** `assets/music/warm.mp3`, "Sunday Morning Coffee", music by Sascha Ende at ende.app (CC BY 4.0), track 20.76–40.76 s.
+- The window is past the track's lighter intro, so its warm electric piano and laid-back beat run from frame 0.
+- The cuts at 2.0 and 4.5 s land on its bar lines. At ~96 BPM the later cuts fall between beats, which suits the soft cuts of this tone.
+- The music fades in over 0.15 s and out over 0.8 s.
+- It replaced the first cut's CC0 track after the owner found that one harsh. The frames are unchanged.
 
 **Effects (sparse):** whoosh-1 at 16.0 (peaks on the end-card wipe), pop-2 at 17.0 (the handle lands, on the beat).
 **Live sound:** none. The clips' audio under the espresso and the pour is strongly tonal (the café's own background music, not the hiss of the machine), so it would clash with the track.
