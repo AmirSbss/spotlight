@@ -93,6 +93,15 @@ def main():
         assert len(t["per_second"]) >= 9 and t["per_second"][7] - t["per_second"][2] > 15, t
         # ...in the second it happens, and the soft opening reads as soft, not as silence (no 3 s window lag)
         assert t["per_second"][5] - t["per_second"][4] > 15 and abs(t["per_second"][0] - t["per_second"][3]) < 2, t
+
+        # the contact sheet's first tile is frame 0, labelled 0: a 20 s video black for its first 0.3 s, then white
+        ff("-f", "lavfi", "-i", "color=c=black:s=320x568:r=30:d=0.3", "-f", "lavfi", "-i", "color=c=white:s=320x568:r=30:d=19.7",
+           "-filter_complex", "[0:v][1:v]concat=n=2:v=1[v]", "-map", "[v]", "-c:v", "libx264", "-pix_fmt", "yuv420p", d / "flash.mp4")
+        check(d / "flash.mp4", "--out", d / "flash", ok=True)
+        lum = subprocess.run(["magick" if subprocess.run(["which", "magick"], capture_output=True).returncode == 0 else "convert",
+                              str(d / "flash" / "check-sheet.jpg"), "-format", "%[fx:p{135,240}.r]", "info:"],
+                             capture_output=True, text=True, check=True).stdout
+        assert float(lum) < 0.2, f"the first contact-sheet tile isn't frame 0 (luma {lum})"
     print("check: all checks passed")
 
 

@@ -322,7 +322,10 @@ def check(video, end_card=0.0, target=-14.0, out=None):
     for s, e in long_holds:
         warnings.append(f"hold without motion {s:.1f}-{e:.1f}s ({e - s:.1f}s > 0.6s)")
     sheet = out / "check-sheet.jpg"
-    vf = (f"fps={24 / max(dur, 0.1)},scale=270:-2,"
+    # every step-th frame from frame 0, each labelled with its own time: the fps filter would show each tile's frame
+    # half a sample period after the time on its label
+    step = max(1, math.ceil(frames / 24))
+    vf = (f"select='not(mod(n\\,{step}))',scale=270:-2,"
           "drawtext=text='%{pts\\:hms}':x=6:y=6:fontsize=18:fontcolor=white:box=1:boxcolor=black@0.6,tile=6x4")
     run(["ffmpeg", "-y", "-v", "error", "-i", video, "-map", "0:v:0", "-vf", vf, "-frames:v", "1", "-update", "1", sheet])
     result = {"file": str(video), "duration": round(dur, 3), "fps": round(fps, 3), "frames": frames,
@@ -349,7 +352,8 @@ def track(audio):
     analyzer = Path(__file__).with_name("analyze_music_cues.py")
     if shutil.which("uv") and analyzer.exists():
         with tempfile.TemporaryDirectory() as tmp:
-            cue = subprocess.run(["uv", "run", "--project", str(analyzer.parent), "python", str(analyzer), str(audio),
+            # the script carries its own dependencies (PEP 723): uv keeps their environment in its cache, not the skill folder
+            cue = subprocess.run(["uv", "run", "--quiet", str(analyzer), str(audio),
                                   "--output-json", f"{tmp}/c.json", "--output-md", f"{tmp}/c.md", "--window-duration", "60"],
                                  capture_output=True, text=True)
             if cue.returncode == 0:
