@@ -82,6 +82,32 @@ def edges(d):
     assert np.max(np.abs(win(out, 0.5, 0.5 + 10 / SR))) < 0.05 * np.max(np.abs(win(out, 1.0, 1.1))), "clip edge clicks"
 
 
+def bundled(d):
+    # the real path: bundled track + bundled effects -> mix.py -> footage.py encode -> footage.py check passes
+    A = ROOT / "skills/spotlight/assets"
+    music = A / "music" / "upbeat.mp3"
+    fx = {k: sorted((A / "sfx").glob(f"{k}-*.ogg"))[0] for k in ("whoosh", "click", "chime")}
+    w = d / "bundled"
+    (w / "out").mkdir(parents=True)
+    (w / "mix.json").write_text(json.dumps({
+        "music": {"file": str(music), "start": 12.0, "fade_in": 0.3, "fade_out": 1.0},
+        "sfx": [{"file": str(fx["whoosh"]), "t": 1.0}, {"file": str(fx["click"]), "t": 2.5},
+                {"file": str(fx["chime"]), "t": 4.6}],
+        "duration": 6.0}))
+    r = subprocess.run([sys.executable, MIXPY, w / "mix.json"], capture_output=True, text=True)
+    assert r.returncode == 0, (r.stdout, r.stderr)
+    report = (w / "mix-report.txt").read_text()
+    assert "skipped" not in report and "runs out" not in report, report
+    # a literal '%' in the folder name must be doubled in ffmpeg's image pattern
+    ff("-f", "lavfi", "-i", "testsrc2=size=540x960:rate=30:duration=6", "-q:v", "3", str(w / "out").replace("%", "%%") + "/%05d.jpg")
+    F = S / "footage.py"
+    subprocess.run(["python3", F, "encode", w / "out", w / "mix.wav", w / "video.mp4"], check=True)
+    r = subprocess.run(["python3", F, "check", w / "video.mp4", "--out", w], capture_output=True, text=True)
+    assert r.returncode == 0, r.stdout + r.stderr
+    loud = json.loads((w / "check.json").read_text())["loudness"]
+    assert abs(loud["I"] + 14) <= 1.0 and loud["TP"] <= -1.0, loud
+
+
 def main():
     with tempfile.TemporaryDirectory(prefix="mix test 50% ٪ ") as tmp:  # spaces, a literal '%' and non-Latin
         d = Path(tmp)
@@ -141,6 +167,7 @@ def main():
         assert m and float(m[1]) > float(m[2]), lines[3][1]  # the cap held the effect below its target lift
         assert float(re.search(r"peak ([+-][0-9.]+) dB", lines[3][1]).group(1)) <= float(m[2]) + 0.05, lines[3][1]
         edges(d)
+        bundled(d)
     print("mix: all checks passed")
 
 
