@@ -6,9 +6,10 @@
 mix.json (every key but duration is optional):
   { "music":  {"file": str, "start": s, "fade_in": s, "fade_out": s, "gain_lufs": LUFS},
     "sfx":    [{"file": str, "t": s, "target_db": dB, "cap_db": dB}],
-    "clips":  [{"file": str, "start": s, "dur": s, "t": s, "gain_db": dB}],
+    "clips":  [{"file": str, "start": s, "dur": s, "t": s, "gain_db": dB over the bed, default -15}],
     "voice":  [{"file": str, "t": s}],
     "duration": s }
+Paths are relative to mix.json's folder (or absolute).
 
 Music is levelled to a bed target (default -23 LUFS) and ducked -8 dB under voice lines,
 with 150 ms ramps around each line. Every SFX gain is solved so its peak in its own
@@ -42,6 +43,9 @@ HF_BAND, HF_LIFT_CAP = (2000.0, 8000.0), 4.0
 FLOOR_DBFS = -26.0        # an effect never lands below this in its own band, however quiet the bed
 FLOOR_UNDER_PEAK = -12.0  # ... nor 12 dB under the bed's broadband peak: a band the music leaves empty
 BODY = 0.15               # the window an effect is judged in
+CLIP_DB = -15.0           # live clip audio, in dB relative to the bed level: present but under the music
+CLIP_FADE = 0.06          # clips fade in and out, so their edges never click
+SILENT = -60.0            # a measure at or below this is silence (ebur128 gates at -70): never level it up
 
 
 def run(cmd):
@@ -72,6 +76,11 @@ def integrated_lufs(samples, tmp, name):
     if r.returncode or not m:
         raise RuntimeError(f"loudness measure failed: {r.stderr.strip()[-600:]}")
     return float(m.group(1).replace("-inf", "-99"))
+
+
+def level(target, measured):
+    # the gain that brings a measured level to target; silence stays silence instead of a +40 dB blow-up
+    return target - measured if math.isfinite(measured) and measured > SILENT else 0.0
 
 
 def place(buf, samples, t, gain=1.0):
@@ -158,12 +167,25 @@ def solve_sfx(sfx, t, bed, target_db, cap_db):
 
 def mix(cfg, outdir):
     outdir = Path(outdir)
+
+    def src(f):  # relative to mix.json, wherever mix.py runs from
+        return outdir / Path(f).expanduser()
+
     with tempfile.TemporaryDirectory(prefix="spotlight mix ") as tmp:
-        ends = [float(e["t"]) + float(e.get("dur") or 0) for e in cfg.get("clips") or []]
-        ends += [float(e["t"]) for e in cfg.get("sfx") or []] + [float(v["t"]) for v in cfg.get("voice") or []]
         music = cfg.get("music") or {}
-        track = decode(music["file"], tmp, "music") if music.get("file") else None
+        track = decode(src(music["file"]), tmp, "music") if music.get("file") else None
         start = round(float(music.get("start") or 0) * SR) if track is not None else 0
+        bed_lufs = float(music.get("gain_lufs") or BED_LUFS)
+        # voice and clips are decoded first: the implied length must cover them whole, not just their start
+        voice_lines = [(float(v["t"]), decode(src(v["file"]), tmp, f"voice{i}"))
+                       for i, v in enumerate(cfg.get("voice") or [])]
+        clips = []
+        for i, c in enumerate(cfg.get("clips") or []):
+            s = decode(src(c["file"]), tmp, f"clip{i}")
+            a = round(float(c.get("start") or 0) * SR)
+            clips.append((c, s[a:a + round(float(c["dur"]) * SR)] if c.get("dur") is not None else s[a:]))
+        ends = [float(c["t"]) + len(s) / SR for c, s in clips] + [t + len(s) / SR for t, s in voice_lines]
+        ends += [float(e["t"]) for e in cfg.get("sfx") or []]
         # with no explicit duration, the music runs out where it runs out, unless an event sits later
         duration = float(cfg.get("duration") or 0)
         if not duration:
@@ -177,13 +199,15 @@ def mix(cfg, outdir):
         if track is not None:
             seg = track[start:start + n]
             bed[:len(seg)] = seg        # a track shorter than the video simply runs out, like a real DJ
-            bed_lufs = float(music.get("gain_lufs") or BED_LUFS)
+            if len(seg) < n:
+                report.append(f"music runs out at {len(seg) / SR:.2f}s, {duration - len(seg) / SR:.2f}s before the end: "
+                              "start earlier or pick a longer track")
             measured = integrated_lufs(bed, tmp, "bed")
-            gain = bed_lufs - measured if math.isfinite(measured) else 0.0  # a silent bed stays silent
+            gain = level(bed_lufs, measured)  # a silent bed stays silent
             bed *= 10 ** (gain / 20)
             report.append(f"music: {Path(music['file']).name} window {start / SR:.2f}-{duration:.2f}s "
                           f"-> {bed_lufs:.1f} LUFS bed (gain {gain:+.1f} dB"
-                          + (", bed measures silent" if not math.isfinite(measured) else "")
+                          + (", bed measures silent" if measured <= SILENT else "")
                           + f"), fades {float(music.get('fade_in') or 0):.2f}/"
                             f"{float(music.get('fade_out') or 0):.2f}s")
             for key, ramp in (("fade_in", np.linspace(0.0, 1.0, round(float(music.get("fade_in") or 0) * SR), dtype=np.float32)),
@@ -192,28 +216,34 @@ def mix(cfg, outdir):
                     f = min(len(ramp), n)
                     region = bed[:f] if key == "fade_in" else bed[n - f:]
                     region *= ramp[:f, None]
-        voice_lines = []  # (t, samples), decoded once: ducking needs the length, placing needs the audio
-        for i, v in enumerate(cfg.get("voice") or []):
-            voice_lines.append((float(v["t"]), decode(v["file"], tmp, f"voice{i}")))
         if voice_lines:
             report.append(f"voice: {len(voice_lines)} lines, duck {DUCK_DB:+.1f} dB with {DUCK_RAMP * 1000:.0f} ms ramps")
         env = duck_envelope(n, [(t, len(s) / SR) for t, s in voice_lines])
         bed *= env[:, None]
         music_only = bed.copy()
         mixdown = bed.copy()
-        for i, c in enumerate(cfg.get("clips") or []):
-            s = decode(c["file"], tmp, f"clip{i}")
-            a = round(float(c.get("start") or 0) * SR)
-            d = round(float(c["dur"]) * SR) if c.get("dur") is not None else len(s)
-            g = 10 ** (float(c.get("gain_db") or 0) / 20)
-            place(music_only, s[a:a + d], float(c["t"]), g)   # live sound belongs to the fallback too
-            place(mixdown, s[a:a + d], float(c["t"]), g)
+        for i, (c, seg) in enumerate(clips):
+            # gain_db is relative to the bed: -15 puts the live sound 15 dB under the music, however the phone recorded it
+            target = bed_lufs + float(c["gain_db"] if c.get("gain_db") is not None else CLIP_DB)
+            g = level(target, integrated_lufs(seg, tmp, f"clip{i}"))
+            f = min(round(CLIP_FADE * SR), len(seg) // 2)
+            if f:
+                ramp = np.linspace(0.0, 1.0, f, dtype=np.float32)[:, None]
+                seg[:f] *= ramp
+                seg[len(seg) - f:] *= ramp[::-1]
+            place(music_only, seg, float(c["t"]), 10 ** (g / 20))   # live sound belongs to the fallback too
+            place(mixdown, seg, float(c["t"]), 10 ** (g / 20))
+            report.append(f"clip {i + 1} {Path(c['file']).name} @ {float(c['t']):.2f}s -> {target:.1f} LUFS ({g:+.1f} dB)")
         report.append(f"clips: {len(cfg.get('clips') or [])} live-audio event(s)")
         for i, e in enumerate(cfg.get("sfx") or []):
-            s = decode(e["file"], tmp, f"sfx{i}")
+            s = decode(src(e["file"]), tmp, f"sfx{i}")
             t = float(e["t"])
-            gain, r = solve_sfx(s, t, mixdown, float(e.get("target_db") or TARGET_DB),
-                                float(e.get("cap_db") or CAP_DB))
+            try:
+                gain, r = solve_sfx(s, t, mixdown, float(e.get("target_db") or TARGET_DB),
+                                    float(e.get("cap_db") or CAP_DB))
+            except RuntimeError as err:  # one bad effect never costs the whole mix
+                report.append(f"sfx {i + 1} {Path(e['file']).name} @ {t:.2f}s  skipped: {err}")
+                continue
             place(mixdown, s, t, gain)
             why, value = r["why"]
             lo, hi = r["band"]
@@ -230,7 +260,10 @@ def mix(cfg, outdir):
             if r["peak"] is not None:
                 line += f"  peak {r['peak']:+.1f} dB"
             report.append(line)
-        for t, samples in voice_lines:  # voice is never ducked and never levelled here; that is voice.py's job
+        for i, (t, samples) in enumerate(voice_lines):  # never ducked or levelled here: that is voice.py's job
+            over = t + len(samples) / SR - duration
+            if over > 1e-3:
+                report.append(f"voice {i + 1} @ {t:.2f}s runs {over:.2f}s past the end: trimmed")
             place(mixdown, samples, t)
         report.append("music-only: bed + clips (no voice, no sfx)")
         sf.write(outdir / "mix.wav", mixdown, SR, subtype="FLOAT")

@@ -8,6 +8,7 @@ python3 suites stay green; the real check always runs under the scripts' uv proj
 """
 import json
 import re
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -43,6 +44,42 @@ def rms_db(x):
 
 def win(x, a, b):
     return x[round(a * SR):round(b * SR)]
+
+
+def edges(d):
+    # mix.json in its own folder with relative paths, run from somewhere else: a video longer than its music,
+    # an effect on the very last frames, a voice line that runs past the end
+    w = d / "work dir"
+    w.mkdir()
+    for f in ("music.wav", "click.wav", "voice.wav", "clip.wav"):
+        shutil.copy(d / f, w / f)
+    (w / "mix.json").write_text(json.dumps({
+        "music": {"file": "music.wav", "gain_lufs": -23},
+        "sfx": [{"file": "click.wav", "t": 13.97}],
+        "voice": [{"file": "voice.wav", "t": 13.0}],
+        "duration": 14.0}))
+    r = subprocess.run([sys.executable, MIXPY, w / "mix.json"], capture_output=True, text=True, cwd="/")
+    assert r.returncode == 0, (r.stdout, r.stderr)
+    report = (w / "mix-report.txt").read_text()
+    assert "music runs out at 12.00s, 2.00s before the end" in report, report
+    assert re.search(r"^sfx 1 click\.wav @ 13\.97s  skipped", report, re.M), report
+    assert "voice 1 @ 13.00s runs 1.00s past the end: trimmed" in report, report
+
+    # no music, no duration: the length covers the whole clip and the whole voice line, plus 0.5 s
+    (w / "mix.json").write_text(json.dumps({
+        "clips": [{"file": "clip.wav", "t": 0.5, "gain_db": -6}],
+        "voice": [{"file": "voice.wav", "t": 3.0}]}))
+    r = subprocess.run([sys.executable, MIXPY, w / "mix.json"], capture_output=True, text=True, cwd="/")
+    assert r.returncode == 0, (r.stdout, r.stderr)
+    out, _ = sf.read(w / "mix.wav", always_2d=True)
+    assert len(out) == round(5.5 * SR), len(out) / SR
+    assert rms_db(win(out, 3.2, 4.8)) > -20, "the voice line is missing or cut"
+    # the live clip lands 6 dB under the -23 LUFS bed level, and fades in instead of starting on a step
+    from mix import integrated_lufs
+    with tempfile.TemporaryDirectory() as t2:
+        lufs = integrated_lufs(win(out, 0.6, 1.9), t2, "clip")
+    assert abs(lufs - (-29.0)) <= 1.0, lufs
+    assert np.max(np.abs(win(out, 0.5, 0.5 + 10 / SR))) < 0.05 * np.max(np.abs(win(out, 1.0, 1.1))), "clip edge clicks"
 
 
 def main():
@@ -103,6 +140,7 @@ def main():
         m = re.search(r"in-band ([+-][0-9.]+) dB \(peak cap ([+-][0-9.]+)", lines[3][1])
         assert m and float(m[1]) > float(m[2]), lines[3][1]  # the cap held the effect below its target lift
         assert float(re.search(r"peak ([+-][0-9.]+) dB", lines[3][1]).group(1)) <= float(m[2]) + 0.05, lines[3][1]
+        edges(d)
     print("mix: all checks passed")
 
 

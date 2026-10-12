@@ -8,4 +8,5 @@ t=$(mktemp -d); trap 'rm -rf "$t"' EXIT
 for b in bash env node python3 grep ls test sed head; do ln -s "$(command -v $b)" "$t/$b"; done
 if out=$(PATH="$t" bash "$D" 2>&1); then echo "FAIL: doctor passed without ffmpeg"; exit 1; fi
 grep -q "MISS.*ffmpeg" <<< "$out" || { echo "FAIL: ffmpeg not named"; echo "$out"; exit 1; }
+grep -q "MISS.*uv" <<< "$out" || { echo "FAIL: uv not named"; echo "$out"; exit 1; }
 echo "doctor: ok"

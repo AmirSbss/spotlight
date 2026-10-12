@@ -12,7 +12,7 @@ req "ImageMagick" "command -v magick || command -v convert" "apt install imagema
 req "Python 3.8+" "python3 -c 'import sys; sys.exit(sys.version_info < (3, 8))'" "install python3"
 req "Node.js 18+" "node -e 'process.exit(+(+process.versions.node.split(\".\")[0] < 18))'" "install Node.js 18+"
 req "Chromium" "test -n \"\${CHROMIUM:-}\" || command -v chromium || command -v chromium-browser || command -v google-chrome || test -d '/Applications/Google Chrome.app' || ls -d ~/.cache/ms-playwright/chromium-* ~/Library/Caches/ms-playwright/chromium-*" "install Chromium or Chrome, run 'npx playwright install chromium', or set CHROMIUM=/path/to/chrome"
-opt "uv (music tempo and cues)" "command -v uv" "https://docs.astral.sh/uv/"
+req "uv (sound mix, music tempo and cues)" "command -v uv" "curl -LsSf https://astral.sh/uv/install.sh | sh  (or brew install uv)"
 opt "piper (narration, phase 2)" "command -v piper" "uv tool install piper-tts"
 opt "codex + gpt-image-bridge (AI images)" "command -v codex && test -x ~/.claude/skills/gpt-image-bridge/bin/gpt-image-2" "https://github.com/oakplank/gpt-image-bridge"
 if [[ $ok == 1 ]]; then echo "ready"; else echo "missing required tools"; exit 1; fi
