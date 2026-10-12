@@ -66,12 +66,18 @@ def main():
         r = json.loads((d / "check.json").read_text())
         assert r["failures"] == [] and any("silent" in w for w in r["warnings"]), r
 
-        # far too loud: true peak above -1 dBTP is a hard failure (exit 1)
+        # far too loud: true peak above -1.5 dBTP is a hard failure (exit 1)
         ff("-f", "lavfi", "-i", "testsrc2=size=320x568:rate=30:duration=2", "-f", "lavfi", "-i", "sine=f=440:d=2:sample_rate=48000",
            "-af", "volume=18dB", "-c:v", "libx264", "-pix_fmt", "yuv420p", "-c:a", "aac", "-shortest", d / "loud.mp4")
         check(d / "loud.mp4", ok=False)
         r = json.loads((d / "check.json").read_text())
         assert any("true peak" in x for x in r["failures"]), r["failures"]
+        # just over the bar: TP about -1.2 (a narrated render shipped at -1.3 when check only failed above -1)
+        ff("-f", "lavfi", "-i", "testsrc2=size=320x568:rate=30:duration=2", "-f", "lavfi", "-i", "sine=f=440:d=2:sample_rate=48000",
+           "-af", "volume=16.4dB", "-c:v", "libx264", "-pix_fmt", "yuv420p", "-c:a", "aac", "-shortest", d / "hot.mp4")
+        check(d / "hot.mp4", "--target", -5.5, ok=False)
+        r = json.loads((d / "check.json").read_text())
+        assert -1.5 < r["loudness"]["TP"] < -1 and len(r["failures"]) == 1 and "true peak" in r["failures"][0], r
 
         # prep under a '%' path still writes its video contact sheets (image2 would read '%' as a frame pattern)
         r = subprocess.run([sys.executable, F, "prep", d / "prep work", d / "held.mp4"], capture_output=True, text=True)

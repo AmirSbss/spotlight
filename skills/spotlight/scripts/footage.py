@@ -4,7 +4,7 @@
   prep   <work> <files...>                        manifest.jsonl + upright stills + contact sheets
   shot   <clip> <start> <dur> <WxH> <cx> <outdir>  one clip shot as exactly round(dur*30) JPGs
   encode <frames-dir> <mix.wav|none> <out.mp4> [--poster img]
-                                                   PNG/JPG frames + mix -> BT.709 H.264/AAC mp4 at -14 LUFS (two-pass),
+                                                   PNG/JPG frames + mix -> BT.709 H.264/AAC mp4 at -14 LUFS, true peak under -1.5,
                                                    with the poster embedded as cover art
   check  <video> [--end-card s] [--target LUFS] [--out dir]    frozen holds, loudness, frames, contact sheet -> check.json
   track  <audio> [--json]                                     per-second loudness (+ tempo, strong cues) for picking a music window
@@ -189,18 +189,43 @@ def shot(clip, start, dur, size, cx, outdir):
     return n
 
 
-def loudnorm(mix, fit):
-    # two-pass: one-pass (dynamic) loudnorm drifts ~0.5-1 LU on beds that start soft and lift
-    target = "I=-14:TP=-2.5:LRA=11"  # AAC overshoots ~0.7 dB on real mixes; -2.5 in lands under -1.5 out
-    r = subprocess.run(["ffmpeg", "-hide_banner", "-nostats", "-i", str(mix), "-af",
-                        f"{fit},loudnorm={target}:print_format=json", "-f", "null", "-"], capture_output=True, text=True)
+AAC = ["-c:a", "aac", "-b:a", "192k"]
+
+
+def limiter(ceiling):
+    # 4x oversampled, so it also catches the peaks between samples; no auto-level, no delay
+    return (f"aresample=192000,alimiter=limit={10 ** (ceiling / 20):.4f}:attack=1:release=60:level=false:latency=true,"
+            "aresample=48000,aformat=sample_rates=48000:channel_layouts=stereo")
+
+
+def integrated(mix, chain):
+    r = subprocess.run(["ffmpeg", "-hide_banner", "-nostats", "-i", str(mix), "-af", f"{chain},ebur128", "-f", "null", "-"],
+                       capture_output=True, text=True)
     if r.returncode:
         raise RuntimeError(f"ffmpeg loudness measure failed: {r.stderr.strip()[-600:]}")
-    m = json.loads(r.stderr[r.stderr.rindex("{"):r.stderr.rindex("}") + 1])
-    if "inf" in m["input_i"]:  # silent mix: nothing to normalize
+    m = re.search(r"I:\s+(-?[0-9.]+|-inf) LUFS", r.stderr[r.stderr.rfind("Summary:"):])
+    return float(m.group(1)) if m and m.group(1) != "-inf" else -70.0
+
+
+def normalize(mix, fit):
+    # one fixed gain to -14 LUFS, then a true-peak limiter, tuned on the AAC it becomes: AAC adds its own overshoot
+    # (0.3 dB on a narrated mix, 2-3 dB on noisy transients such as a whoosh), so the limiter's ceiling drops until the
+    # encoded peak is under -1.5, and the gain makes up the loudness the limiting took. ffmpeg's loudnorm (linear) quietly
+    # fell back to dynamic mode whenever the gain pushed a peak over its ceiling, and landed at I -14.5, TP -1.3.
+    i = integrated(mix, fit)
+    if i <= -69.9:  # silent mix: nothing to normalize
         return fit
-    return (f"{fit},loudnorm={target}:measured_I={m['input_i']}:measured_TP={m['input_tp']}:"
-            f"measured_LRA={m['input_lra']}:measured_thresh={m['input_thresh']}:offset={m['target_offset']}:linear=true")
+    gain, ceiling = -14 - i, -2.5
+    with tempfile.TemporaryDirectory(prefix="spotlight-loud ") as tmp:
+        for _ in range(5):
+            chain = f"{fit},volume={gain:.2f}dB,{limiter(ceiling)}"
+            run(["ffmpeg", "-y", "-v", "error", "-i", mix, "-af", chain, *AAC, f"{tmp}/a.m4a"])
+            got = loudness(f"{tmp}/a.m4a")
+            if got["TP"] <= -1.5 and abs(got["I"] + 14) <= 0.3:
+                break
+            gain += -14 - got["I"]
+            ceiling -= max(0.0, got["TP"] + 1.7)
+    return chain
 
 
 def encode(frames, mix, dst, poster=None):
@@ -226,7 +251,7 @@ def encode(frames, mix, dst, poster=None):
     if mix != "none":
         # pad or trim the mix to the picture so a short track never shortens the video
         inputs += ["-i", mix]
-        graph += f";[1:a]{loudnorm(mix, f'apad,atrim=0:{dur}')},aformat=sample_rates=48000:channel_layouts=stereo[a]"
+        graph += f";[1:a]{normalize(mix, f'apad,atrim=0:{dur}')}[a]"
         maps = ["-map", "[v]", "-map", "[a]"]
     else:
         # a silent track, not none: Telegram and others treat audio-less MP4s as GIFs
@@ -241,7 +266,7 @@ def encode(frames, mix, dst, poster=None):
         maps += ["-map", "2:v", "-c:v:1", "mjpeg", "-disposition:v:1", "attached_pic"]
     # passthrough: a frame that fails to decode must show up as missing, not be papered over by duplication
     cmd = ["ffmpeg", "-y", "-v", "error", *inputs, "-filter_complex", graph, *maps, *passthrough(ffmpeg_version()),
-           "-c:a", "aac", "-b:a", "192k", "-c:v:0", "libx264", "-crf", 18, "-preset", "medium",
+           *AAC, "-c:v:0", "libx264", "-crf", 18, "-preset", "medium",
            "-colorspace:v:0", "bt709", "-color_primaries:v:0", "bt709", "-color_trc:v:0", "bt709", "-color_range:v:0", "tv",
            "-movflags", "+faststart", "-frames:v:0", n, dst]
     run(cmd)
@@ -305,8 +330,8 @@ def check(video, end_card=0.0, target=-14.0, out=None):
     if abs(frames - round(dur * fps)) > 1:
         failures.append(f"frame count {frames} doesn't match {dur:.3f}s at {fps:g} fps")
     if loud:
-        if loud["TP"] > -1.0:
-            failures.append(f"true peak {loud['TP']} dBTP is above -1")
+        if loud["TP"] > -1.5:
+            failures.append(f"true peak {loud['TP']} dBTP is above -1.5 (the quality bar)")
         if loud["I"] <= -69.9:  # ebur128's floor: a silent track (encode's mix=none) or audio shorter than its 400 ms gate
             warnings.append("audio is silent or too short to measure (integrated loudness at the -70 LUFS floor)")
         else:

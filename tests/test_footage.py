@@ -193,6 +193,15 @@ def main():
                             capture_output=True, text=True).stderr
         peak = float(tp.rsplit("Peak:", 1)[1].split()[0])
         assert peak <= -1.5, peak  # true peak after AAC, not just before it
+        # peaks far over the loudness, and noisy (Piper's plosives reach +2.8 dBTP at -16 LUFS; a whoosh is noise):
+        # loudnorm's linear mode gave up on a narrated mix and landed at I -14.5, TP -1.3; on this one, I -15.4, TP +0.6
+        ff("-f", "lavfi", "-i", "aevalsrc='0.04*sin(2*PI*220*t)+0.25*(2*random(0)-1)*pow(abs(sin(PI*3*t)),6)"
+           "+if(lt(mod(t,0.7),0.01),1.1*(2*random(1)-1),0)':s=48000:d=30", "-ac", "2", "-c:a", "pcm_f32le", work / "peaky.wav")
+        cli("encode", small, work / "peaky.wav", work / "peaky.mp4")
+        r = subprocess.run(["ffmpeg", "-nostats", "-i", work / "peaky.mp4", "-af", "ebur128=peak=true", "-f", "null", "-"],
+                           capture_output=True, text=True).stderr
+        lufs, peak = float(r.rsplit("I:", 1)[1].split()[0]), float(r.rsplit("Peak:", 1)[1].split()[0])
+        assert abs(lufs + 14) < 0.35 and peak <= -1.5, (lufs, peak)
         # JPEG frames (what capture.mjs writes) encode the same way
         jpgs = work / "outjpg"
         jpgs.mkdir()
