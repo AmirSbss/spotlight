@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""The bundled library: every file licensed CC0/PD with its own source, real audio, within the size budget.
+"""The bundled library: every file licensed CC0/PD (or CC BY 4.0, credited) with its own source, real audio, within the size budget.
 
 Run: python3 tests/test_assets.py
 """
@@ -22,14 +22,14 @@ def probe(f):
 
 
 def main():
-    for kind, budget in (("music", 15e6), ("sfx", 1.5e6)):
+    for kind, budget in (("music", 30e6), ("sfx", 1.5e6)):
         d = A / kind
         files = sorted(p for p in d.iterdir() if p.suffix in AUDIO)
         lic = (d / "LICENSES.md").read_text()
         rows = {m[0]: m[1] for m in re.findall(r"^\|\s*`([\w.-]+\.(?:mp3|ogg|wav))`\s*\|(.+)$", lic, re.M)}
         assert set(rows) == {p.name for p in files}, (kind, sorted(set(rows) ^ {p.name for p in files}))
         for name, row in rows.items():
-            assert re.search(r"\bCC0\b|[Pp]ublic [Dd]omain", row), f"{name}: no CC0/PD licence in its row"
+            assert re.search(r"\bCC0\b|[Pp]ublic [Dd]omain" + (r"|\bCC BY 4\.0\b" if kind == "music" else ""), row), f"{name}: no CC0/PD licence in its row"
             assert "https://" in row, f"{name}: no source page"
         assert sum(p.stat().st_size for p in files) <= budget, f"{kind} over {budget / 1e6:.1f} MB"
         for p in files:
@@ -44,7 +44,9 @@ def main():
             else:
                 assert dur <= 3.0, f"{p.name}: {dur:.1f}s is long for an effect"
         if kind == "music":
-            assert {p.stem for p in files} == MOODS, sorted(p.stem for p in files)
+            # one track per mood under the mood's name, plus optional alternatives named <mood>-<n>
+            stems = {p.stem for p in files}
+            assert MOODS <= stems and all(re.fullmatch(r"(%s)(-\d+)?" % "|".join(MOODS), st) for st in stems), sorted(stems)
             # an explainer runs up to 180 s: at least one track must cover it from its start
             assert max(probe(p)[1] for p in files) >= 180, "no track long enough for a 180 s explainer"
         else:

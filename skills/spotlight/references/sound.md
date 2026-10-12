@@ -12,17 +12,23 @@ Take the track for the tone; switch only when the customers clearly expect somet
 
 | Tone | Track |
 |---|---|
-| brag `default`, `chaotic`, `app-store`; promo `energetic`, `recap` | `assets/music/upbeat.mp3` |
+| brag `default`, `chaotic`, `app-store`; promo `energetic`, `recap` | `assets/music/upbeat.mp3` (more in the same style: `upbeat-9`, `-12`, `-11`, `-10`) |
 | brag `polished`, `yc-parody`; explain `keynote`; promo `default` for software or a developer product | `assets/music/minimal-tech.mp3` |
 | promo `default` (cafés, shops, people, services) | `assets/music/warm-acoustic.mp3` |
 | brag `deadpan`; promo `premium`; explain `clear` | `assets/music/calm.mp3` |
 | brag and promo `cinematic`; explain `documentary` | `assets/music/cinematic.mp3` |
 
+The `upbeat*` tracks are by Sascha Ende (ende.app), under CC BY 4.0: put "Music by Sascha Ende at ende.app" in `sources.md`, and in `caption.txt` when there's room. Never register a video's music with Content ID. The other tracks are CC0. `assets/music/LICENSES.md` has every file's source and licence.
+
 Measured shapes (track time). Start the window where the music already moves, unless the hook is meant to build into a lift:
 
 | Track | Tempo | Length | Shape | Use |
 |---|---|---|---|---|
-| `upbeat.mp3` | 120 BPM | 156 s | lighter intro 0–8 s; full beat 8–144 s; softer 144–152 s; silent after | start at 8 s or later; ends usable at 151 s |
+| `upbeat.mp3` | 120 BPM | 164 s | full beat from the first bar, very even (−14 to −17 LUFS per 10 s); a short dip at 110–120 s; fades out 160–164 s | any start; strong cues run from 16 s; ends usable at 159 s |
+| `upbeat-9.mp3` | ~115 BPM | 114 s | on the beat from 1 s; punchier (−12 to −13 LUFS at 20–50 s and 70–100 s); a dip at 50–60 s; ends at 110 s | a busier alternative for `chaotic` or `energetic` |
+| `upbeat-12.mp3` | ~110 BPM | 117 s | lighter start 0–10 s, builds to its fullest at 80–100 s; ends at 115 s | start ~70 s so the lift lands on the reveal |
+| `upbeat-11.mp3` | ~115 BPM | 88 s | even from the start; eases off in the last 10 s | a short alternative |
+| `upbeat-10.mp3` | ~110 BPM | 60 s | one even loop, start to end | for videos ≤ 55 s |
 | `minimal-tech.mp3` | ~120 BPM | 193 s | steady kick from the first second to 192 s | any start; the only track long enough for a 180 s explainer |
 | `warm-acoustic.mp3` | uncertain | 121 s | **stop-time intro 0–16 s** (a bar of sound, then a bar of near-silence); full band 16–111 s; soft outro 111–120 s | start at 16.0 s or later: never put the intro under a hook |
 | `calm.mp3` | ~99 BPM | 136 s | fades up from silence 0–18 s; steady groove 18–126 s; fades out 126–136 s | start at 18 s for movement from frame 0, or ~10 s so the groove lands 8 s in |

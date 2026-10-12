@@ -15,6 +15,6 @@
 | Cinzel, Cormorant Garamond, Jost, Vazirmatn (Google Fonts) | rendered into `examples/promo/` | SIL OFL 1.1 |
 | Space Grotesk, Inter, JetBrains Mono (Google Fonts) | rendered into `examples/demo/video.mp4` and `examples/explain/video.mp4` | SIL OFL 1.1 |
 
-The bundled music (`skills/spotlight/assets/music/`) and sound effects (`skills/spotlight/assets/sfx/`) are CC0. Each file's author, source page and licence statement are in the `LICENSES.md` beside it.
+The bundled sound effects (`skills/spotlight/assets/sfx/`) are CC0. The bundled music (`skills/spotlight/assets/music/`) is CC0, except the `upbeat*` tracks: Happy Beats & Business Moves Vol. 1, 9, 10, 11 and 12, music by Sascha Ende at ende.app, licensed CC BY 4.0 (the same files the brag skill bundles). Each file's author, source page and licence statement are in the `LICENSES.md` beside it.
 
 Piper (narration, `piper-tts`, GPL-3.0) is not bundled. `voice.py` runs it as a separate program, and downloads voices on first use; each voice carries its own licence (`skills/spotlight/references/sound.md`).

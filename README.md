@@ -85,7 +85,7 @@ The agent handles the creative side. It writes a brief and a shot plan, then bui
 - `site.mjs` captures a website's copy, colours, fonts, logo, screens and a full-page image. It has a hard time limit, so endless feeds and stalled servers can't hang the run.
 - `capture.mjs` renders frames in parallel, and the result matches a single-threaded render pixel for pixel.
 - The render kit draws charts (bar, line, donut, a counting number) straight from your data, diagrams whose lines draw in, and 3D scenes: a dotted globe or map with routes between real places, and an extruded logo. Every number on a chart is the exact string from your file.
-- `mix.py` mixes the music, sound effects, live sound from your clips and narration. It levels the music, ducks it under the voice and sets each effect's gain so it's heard over the music in its own frequency band. A bundled CC0 library (five moods of music and 18 effects) is used when you don't bring a track.
+- `mix.py` mixes the music, sound effects, live sound from your clips and narration. It levels the music, ducks it under the voice and sets each effect's gain so it's heard over the music in its own frequency band. A bundled library (five moods of music and 18 CC0 effects; the upbeat tracks are by Sascha Ende of ende.app, CC BY 4.0, and the rest are CC0) is used when you don't bring a track.
 - `voice.py` reads narration aloud with [Piper](https://github.com/OHF-Voice/piper1-gpl), locally, using only voices whose licences allow commercial use.
 
 After the render, a fresh agent that didn't build the video looks through its frames and measurements and writes down what's wrong. The builder fixes those things, and another fresh agent confirms the fixes. This goes on for up to three rounds.
@@ -123,7 +123,7 @@ You need ffmpeg 4.4 or newer with the zscale filter, ImageMagick 6 or 7, Python 
 
 ## Status
 
-Phases 1 to 3 of 4 are done: the three modes, website capture, the check and the critic loop; sound (a bundled CC0 music and sound-effects library, levelled effects and optional local narration); and visuals (charts, diagrams, a routes globe and an extruded logo). Phase 4 adds a finished example per mode, made with spotlight itself; the explainer is in [examples/explain](examples/explain) and the promo in [examples/promo](examples/promo). The design and the plans live in [docs/superpowers](docs/superpowers).
+Phases 1 to 3 of 4 are done: the three modes, website capture, the check and the critic loop; sound (a bundled music and sound-effects library, levelled effects and optional local narration); and visuals (charts, diagrams, a routes globe and an extruded logo). Phase 4 adds a finished example per mode, made with spotlight itself; the explainer is in [examples/explain](examples/explain) and the promo in [examples/promo](examples/promo). The design and the plans live in [docs/superpowers](docs/superpowers).
 
 ## Tests
 
