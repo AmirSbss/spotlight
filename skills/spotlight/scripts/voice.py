@@ -6,7 +6,8 @@
 lines.json: [{"id": "s1", "text": "...", "lang": "en"}, ...]; a line may also set "voice" (a Piper voice name such as
 "de_DE-mls-medium", or a path to a local .onnx with its .onnx.json beside it) and "speaker" (an id, for multi-speaker
 voices). Output lands next to lines.json. Each line is levelled to -16 LUFS, so it sits clearly over the -23 LUFS
-music bed that mix.py ducks under it.
+music bed that mix.py ducks under it. A re-run synthesises only the lines whose text or voice changed (voice/takes.json
+remembers the rest); delete voice/<id>.wav for a new take of an unchanged line.
 
 Piper is not bundled and runs as a separate program (piper-tts is GPL; nothing here imports it):
   uv tool install --python 3.12 "piper-tts>=1.3"
@@ -107,7 +108,7 @@ def lufs(wav):
     return float(m.group(1)) if m and m.group(1) != "-inf" else None
 
 
-def speak(line, outdir, tmp):
+def pick(line):
     lang = str(line.get("lang") or "").split("-")[0].split("_")[0].lower()
     name, speaker = line.get("voice"), line.get("speaker")
     if not name:
@@ -116,6 +117,10 @@ def speak(line, outdir, tmp):
                                f"whose licence you have checked, or leave narration off; defaults: {', '.join(VOICES)}")
         name, default_speaker, _ = VOICES[lang]
         speaker = default_speaker if speaker is None else speaker
+    return name, speaker
+
+
+def speak(line, name, speaker, outdir, tmp):
     onnx = model(name)
     raw = Path(tmp) / f"{line['id']}.raw.wav"
     # one line of text on stdin: the new CLI puts no pause between input lines, and both CLIs accept only these flags
@@ -130,7 +135,7 @@ def speak(line, outdir, tmp):
     run(["ffmpeg", "-y", "-v", "error", "-i", raw, "-af", f"volume={gain:.2f}dB,aresample=48000",
          "-c:a", "pcm_f32le", out])
     dur = float(json.loads(run(["ffprobe", "-v", "error", "-of", "json", "-show_format", out]))["format"]["duration"])
-    return name, round(dur, 3)
+    return round(dur, 3)
 
 
 def main():
@@ -148,13 +153,26 @@ def main():
         raise SystemExit(f"voice.py: cannot read {src} as [{{id, text, lang}}, ...]: {e}")
     outdir = src.parent
     (outdir / "voice").mkdir(exist_ok=True)
+    # Piper isn't deterministic: a second take of the same line differs by up to ~0.3 s, pauses included. So a line whose
+    # text and voice haven't changed keeps its take, and the timing built on it stays true.
+    made = outdir / "voice" / "takes.json"
+    try:
+        takes = json.loads(made.read_text())
+    except (OSError, ValueError):
+        takes = {}
     durations, used = {}, set()
     try:
         with tempfile.TemporaryDirectory(prefix="spotlight voice ") as tmp:
             for line in lines:
-                name, durations[line["id"]] = speak(line, outdir, tmp)
+                lid = line["id"]
+                name, speaker = pick(line)
+                key = hashlib.sha1(json.dumps([" ".join(str(line["text"]).split()), name, speaker, VOICE_LUFS]).encode()).hexdigest()
+                kept = takes.get(lid, {}).get("key") == key and (outdir / "voice" / f"{lid}.wav").exists()
+                durations[lid] = takes[lid]["dur"] if kept else speak(line, name, speaker, outdir, tmp)
+                takes[lid] = {"key": key, "dur": durations[lid]}
+                made.write_text(json.dumps(takes, indent=2) + "\n")
                 used.add(name)
-                print(f"{line['id']}: {durations[line['id']]:.2f}s ({Path(name).name})")
+                print(f"{lid}: {durations[lid]:.2f}s ({Path(name).name}{', unchanged' if kept else ''})")
     except (RuntimeError, OSError) as e:
         raise SystemExit(f"voice.py: {e}")
     (outdir / "durations.json").write_text(json.dumps(durations, indent=2) + "\n")

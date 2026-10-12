@@ -20,7 +20,7 @@ mkdir "$t/fake"; for b in bash cat python3 ffmpeg ffprobe; do ln -s "$(command -
 cat > "$t/fake/piper" <<'SH'
 #!/usr/bin/env bash
 out=""; while (( $# )); do case "$1" in -f) out=$2; shift;; -m) echo "$2" > "$FAKE_LOG.model";; -s) echo "$2" > "$FAKE_LOG.speaker";; esac; shift; done
-cat > "$FAKE_LOG.stdin"
+cat > "$FAKE_LOG.stdin"; echo x >> "$FAKE_LOG.calls"
 ffmpeg -v error -y -f lavfi -i "sine=f=220:sample_rate=22050:duration=1.2" -af volume=-3dB "$out"
 SH
 chmod +x "$t/fake/piper"; : > "$t/model.onnx"
@@ -42,6 +42,24 @@ import json, sys; d = json.load(open(sys.argv[1] + "/durations.json"))
 assert set(d) == {"s1"} and abs(d["s1"] - 1.2) < 0.05, d
 PY
 l=$(lufs "$w/voice/s1.wav"); python3 -c "import sys; sys.exit(abs($l + 16) > 1)" || fail "line not levelled to -16 LUFS ($l)"
+
+# a re-run keeps unchanged takes (Piper's second take of a line differs, so timing built on the first would drift);
+# a changed line, and only that line, is spoken again
+python3 - "$w/lines.json" "$t/model.onnx" <<'PY'
+import json, sys
+json.dump([{"id": "s1", "text": "اسپات‌لایت\nبا Spotlight", "lang": "fa", "voice": sys.argv[2], "speaker": 3},
+           {"id": "s2", "text": "Two.", "lang": "fa", "voice": sys.argv[2]}], open(sys.argv[1], "w"), ensure_ascii=False)
+PY
+: > "$t/log.calls"
+FAKE_LOG="$t/log" PATH="$t/fake" python3 "$V" "$w/lines.json" > "$t/run2" || fail "second run failed"
+[[ $(wc -l < "$t/log.calls") == 1 ]] && grep -q "s1: .*unchanged" "$t/run2" || fail "unchanged s1 was spoken again: $(cat "$t/run2")"
+sed -i 's/Two\./Two, again./' "$w/lines.json"; : > "$t/log.calls"
+FAKE_LOG="$t/log" PATH="$t/fake" python3 "$V" "$w/lines.json" > "$t/run3" || fail "third run failed"
+[[ $(wc -l < "$t/log.calls") == 1 && $(cat "$t/log.stdin") == "Two, again." ]] || fail "edited s2 not respoken alone: $(cat "$t/run3")"
+python3 - "$w" <<'PY' || fail "durations.json lost the kept line"
+import json, sys; d = json.load(open(sys.argv[1] + "/durations.json"))
+assert set(d) == {"s1", "s2"} and abs(d["s1"] - 1.2) < 0.05, d
+PY
 
 # a language with no default voice is a clear error that names it
 echo '[{"id": "a", "text": "x", "lang": "xx"}]' > "$t/x.json"
