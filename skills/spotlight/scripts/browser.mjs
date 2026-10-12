@@ -18,6 +18,9 @@ export async function launch(extraArgs = []) {
   ].find(existsSync);  // undefined: playwright's own downloaded browser
   return chromium.launch({
     executablePath,
-    args: ["--no-sandbox", "--force-color-profile=srgb", "--font-render-hinting=none", "--disable-gpu", ...extraArgs],
+    // file access: three shots import ES modules from the work folder; swiftshader: WebGL on the CPU, kept on in
+    // Chrome builds that no longer fall back to it by themselves
+    args: ["--no-sandbox", "--force-color-profile=srgb", "--font-render-hinting=none", "--disable-gpu",
+      "--allow-file-access-from-files", "--enable-unsafe-swiftshader", ...extraArgs],
   });
 }

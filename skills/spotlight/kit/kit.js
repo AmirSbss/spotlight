@@ -6,6 +6,10 @@
 //   still: "stills/004.jpg"            a photo, an AI image or a background still
 //   web: "site/full.png", scroll: [y0, y1]   a captured page drawn at the output width and scrolled at a constant
 //                          speed (output px); push, filter and grade work on it too
+//   three: "three/routes.js", params: {...}   a Three.js scene (copy <skill-dir>/kit/three/ to work/three/). The module
+//                          exports create(canvas, params, { width, height, css }) -> { render(tLocal, p) }; render draws
+//                          synchronously and may return { anchors: { id: [x, y, alpha] } } (output px): every element
+//                          with data-anchor="id" is centred there at that opacity, so labels are DOM text in any script
 //   drift: [x0, x1]        horizontal drift in % of width. Stills move linearly: a photo defaults to push 1 +0.01/s;
 //                          a still with a `filter` (text-card backdrop) to push 1.10 +0.08/s and drift 0 +4%/s
 // and optionally:
@@ -34,6 +38,8 @@
   css.setProperty("--side", `${Math.round(P.width * 0.066)}px`);
 
   const foot = $("#foot"), panel = $("#panel"), web = $("#web"), grain = $("#grain");
+  const threes = new Map();  // shot -> { canvas, scene }: one canvas per three shot, created once at ready
+  const token = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
   const shown = new Map();
   async function show(img, src) {
     if (shown.get(img) === src) return;
@@ -49,6 +55,20 @@
     const s = P.shots.find((s) => t >= s.a && t < s.b) || P.shots[P.shots.length - 1];
     const p = clamp((t - s.a) / (s.b - s.a));
     const e = inOutCubic(p);
+    for (const [shot, x] of threes) x.canvas.style.opacity = shot === s ? 1 : 0;
+    for (const el of document.querySelectorAll("[data-anchor]")) el.style.opacity = 0;
+    if (s.three) {
+      // a 3D scene drawn for this t; its anchors place DOM labels over it
+      const out = threes.get(s).scene.render(t - s.a, p) || {};
+      for (const [id, [x, y, alpha]] of Object.entries(out.anchors || {})) {
+        for (const el of document.querySelectorAll(`[data-anchor="${id}"]`)) {
+          Object.assign(el.style, { left: `${x}px`, top: `${y}px`, opacity: alpha });
+        }
+      }
+      foot.style.opacity = 0;
+      panel.style.opacity = 0;
+      web.style.opacity = 0;
+    }
     const src = s.clip ? `${s.clip}/${String(frameAt(s, t)).padStart(5, "0")}.jpg` : (s.still || s.web);
     // stills and web pages move linearly at a constant speed (an eased move stalls at both ends, and that reads as
     // frozen). A photo pushes in +0.01/s; a text-card backdrop (a still with a `filter`) pushes +0.08/s and drifts
@@ -59,7 +79,9 @@
     const [from, to] = s.push || (card ? [1.10, 1.10 + 0.08 * len] : s.still ? [1, 1 + 0.01 * len] : s.web ? [1, 1] : [1, 1.025]);
     const [dx0, dx1] = s.drift || (card ? [0, 4 * len] : [0, 0]);
     const scale = from + (to - from) * m, dx = dx0 + (dx1 - dx0) * m;
-    if (s.web) {
+    if (s.three) {
+      // drawn above
+    } else if (s.web) {
       // the real page, scrolled: drawn at the output width, moving from scroll[0] to scroll[1] (output px)
       await show(web, src);
       const [y0, y1] = s.scroll || [0, 0], y = y0 + (y1 - y0) * m;
@@ -147,6 +169,19 @@
     for (const [font, sample] of P.fonts || []) await document.fonts.load(font, sample);  // ["600 80px Vazirmatn", "فارسی"]
     await document.fonts.ready;
     for (const s of P.shots) if (s.still) { const i = new Image(); i.src = s.still; await i.decode(); }
+    for (const s of P.shots.filter((s) => s.three)) {
+      const canvas = document.createElement("canvas");
+      canvas.className = "three";
+      canvas.width = P.width;
+      canvas.height = P.height;
+      grain.before(canvas);
+      try {
+        const mod = await import(new URL(s.three, location.href).href);
+        threes.set(s, { canvas, scene: await mod.create(canvas, s.params || {}, { width: P.width, height: P.height, css: token }) });
+      } catch (e) {
+        throw new Error(`three shot ${s.three}: ${e.message}`);
+      }
+    }
     for (const i of document.images) if (i.getAttribute("src")) await i.decode();
     await window.render(0);
     return { fps: FPS, duration: P.duration, width: P.width, height: P.height };
