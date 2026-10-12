@@ -159,4 +159,30 @@ done
 q="$t/chart320x568"; (cd "$q" && CAPTURE_WORKERS=1 node "$ROOT/skills/spotlight/scripts/capture.mjs" frames >/dev/null && (cd out && md5sum *.jpg) > serial.md5 \
   && CAPTURE_WORKERS=4 node "$ROOT/skills/spotlight/scripts/capture.mjs" frames >/dev/null && (cd out && md5sum -c --quiet ../serial.md5)) \
   || { echo "FAIL: parallel capture changed chart pixels"; exit 1; }
+# diagrams: a path draws in from its data-at over data-dur (hidden before, partly drawn mid-way, whole after);
+# other diagram elements fade in like caption lines
+dg="$t/diagram"; mkdir -p "$dg"; cp "$ROOT/skills/spotlight/kit/scene.html" "$ROOT/skills/spotlight/kit/kit.js" "$dg/"; : > "$dg/fonts.css"
+ln -s "$t/node_modules" "$dg/node_modules"; $IM -size 64x64 xc:gray20 "$dg/bg.png"
+echo 'window.SPOTLIGHT = { width: 320, height: 568, duration: 2, grain: 0, shots: [ { a: 0, b: 2, still: "bg.png" } ] };' > "$dg/timeline.js"
+python3 - "$dg/scene.html" <<'PY'
+import sys; p = sys.argv[1]; s = open(p).read()
+d = '<div class="cap mid" data-a="0" data-b="2"><svg class="diagram" viewBox="0 0 300 100"><path id="p" d="M10 50 H290" data-at="0.5" data-dur="0.6"/><circle id="c" cx="290" cy="50" r="8" data-at="0.5"/></svg></div>'
+open(p, "w").write(s.replace('<div id="end">', d + '\n  <div id="end">'))
+PY
+out=$(cd "$dg" && node --input-type=module -e "
+  import { launch } from '$ROOT/skills/spotlight/scripts/browser.mjs';
+  import { pathToFileURL } from 'node:url';
+  const b = await launch(), p = await b.newPage({ viewport: { width: 320, height: 568 } });
+  await p.goto(pathToFileURL(process.cwd() + '/scene.html').href); await p.evaluate(() => window.ready);
+  const r = [];
+  for (const t of [0.4, 0.8, 1.2]) r.push(await p.evaluate(async (t) => { await window.render(t); const s = (id) => getComputedStyle(document.getElementById(id));
+    return [+s('p').opacity, parseFloat(s('p').strokeDashoffset), +s('c').opacity]; }, t));
+  console.log(JSON.stringify(r)); await b.close();")
+python3 - "$out" <<'PY' || { echo "FAIL: diagram draw-in $out"; exit 1; }
+import json, sys
+(o0, d0, c0), (o1, d1, c1), (o2, d2, c2) = json.loads(sys.argv[1].splitlines()[-1])
+assert o0 == 0 and c0 == 0, "visible before data-at"
+assert o1 == 1 and 0.01 < d1 < 0.99, ("not drawing mid-way", o1, d1)
+assert abs(d2) < 1e-3 and c2 == 1, ("not whole after", d2, c2)
+PY
 echo "kit: ok"

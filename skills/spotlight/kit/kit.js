@@ -23,6 +23,8 @@
 // Charts sit inside a .cap: .chart[data-kind=bar|line|donut|number][data-at][data-dur] with data-values / data-labels
 // (JSON arrays) or data-value (number). Values are numbers or strings ("12,400", "30.5%", "۱۲٬۴۰۰"): a string is
 // shown exactly as given once the chart settles, and counts up in its own digits, separators and units.
+// Diagrams sit inside a .cap too: <svg class="diagram">; its path/line/polyline elements with data-at draw in over
+// data-dur (default 0.6 s), and every other element with data-at fades in like a caption line.
 (() => {
   const P = window.SPOTLIGHT, FPS = 30;
   const $ = (s) => document.querySelector(s);
@@ -226,6 +228,12 @@
   function animate(el, t) {
     for (const x of el.querySelectorAll("[data-at]")) {
       if (charts.has(x)) drawChart(x, t);
+      if (x.matches(".diagram :is(path, line, polyline)")) {
+        const q = outCubic(ramp(t, +x.dataset.at, +x.dataset.at + (+x.dataset.dur || 0.6)));
+        x.style.opacity = q > 0 ? 1 : 0;
+        x.style.strokeDashoffset = 1 - q;
+        continue;
+      }
       const q = outCubic(ramp(t, +x.dataset.at, +x.dataset.at + 0.4));
       const dir = x.closest("[dir=rtl]") ? -1 : 1;  // list rows slide in from the reading side
       x.style.opacity = q;
@@ -277,6 +285,10 @@
     await document.fonts.ready;
     for (const s of P.shots) if (s.still) { const i = new Image(); i.src = s.still; await i.decode(); }
     for (const el of document.querySelectorAll(".chart")) buildChart(el);
+    for (const x of document.querySelectorAll(".diagram :is(path, line, polyline)[data-at]")) {
+      x.setAttribute("pathLength", 1);  // dash offset 1 -> 0 draws the whole line, whatever its real length
+      x.style.strokeDasharray = "1 1";
+    }
     for (const s of P.shots.filter((s) => s.three)) {
       const canvas = document.createElement("canvas");
       canvas.className = "three";

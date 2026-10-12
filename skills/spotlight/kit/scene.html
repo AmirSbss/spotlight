@@ -76,6 +76,11 @@
   .chart[data-kind=donut] .legend div { display: flex; align-items: center; gap: calc(14px * var(--k)); }
   .chart[data-kind=donut] .legend i { width: calc(26px * var(--k)); height: calc(26px * var(--k)); border-radius: 50%; flex: none; }
   .chart[data-kind=donut] .legend .val { margin-inline-start: auto; font: 700 calc(40px * var(--k))/1 var(--display); }
+  /* diagrams: lines draw in, nodes and labels fade in (kit.js); restyle freely per video */
+  .diagram { display: block; width: 100%; overflow: visible; }
+  .diagram :is(path, line, polyline) { fill: none; stroke: var(--accent); stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; }
+  .diagram :is(circle, rect, ellipse) { fill: var(--accent); }
+  .diagram text { fill: var(--text); font: 600 22px var(--body); }
   .chart .s0 { stroke: var(--accent); background: var(--accent); }
   .chart .s1 { stroke: color-mix(in srgb, var(--accent) 55%, var(--paper)); background: color-mix(in srgb, var(--accent) 55%, var(--paper)); }
   .chart .s2 { stroke: color-mix(in srgb, var(--accent) 45%, var(--ink)); background: color-mix(in srgb, var(--accent) 45%, var(--ink)); }
