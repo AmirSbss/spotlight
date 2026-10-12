@@ -20,6 +20,9 @@
 //   grain: 0.12            film grain for this shot (SPOTLIGHT.grain sets it for every shot)
 // Captions and the end card are DOM in scene.html: .cap[data-a][data-b], children [data-at]
 // (absolute seconds), data-scrim="top|bottom"; #end wipes in at SPOTLIGHT.end.
+// Charts sit inside a .cap: .chart[data-kind=bar|line|donut|number][data-at][data-dur] with data-values / data-labels
+// (JSON arrays) or data-value (number). Values are numbers or strings ("12,400", "30.5%", "۱۲٬۴۰۰"): a string is
+// shown exactly as given once the chart settles, and counts up in its own digits, separators and units.
 (() => {
   const P = window.SPOTLIGHT, FPS = 30;
   const $ = (s) => document.querySelector(s);
@@ -117,8 +120,112 @@
     grain.style.backgroundPosition = `${(f * 73) % 256}px ${(f * 151) % 256}px`;
   }
 
+  // charts: the DOM is built once at ready; each frame sets its state from t. Numbers keep the source's own style
+  const DIGITS = { "0": "0123456789", "۰": "۰۱۲۳۴۵۶۷۸۹", "٠": "٠١٢٣٤٥٦٧٨٩" };
+  function numeric(v) {
+    const text = String(v), set = /[۰-۹]/.test(text) ? DIGITS["۰"] : /[٠-٩]/.test(text) ? DIGITS["٠"] : DIGITS["0"];
+    const ascii = text.replace(/[۰-۹٠-٩]/g, (d) => String(set.indexOf(d)));
+    const m = ascii.match(/^(\D*?)(-?\d[\d,٬]*(?:[.٫]\d+)?)(.*)$/);
+    if (!m) return { text, value: 0, fmt: () => text };
+    const [, pre, num, post] = m, group = (num.match(/[,٬]/) || [""])[0], point = (num.match(/[.٫]/) || ["."])[0];
+    const decimals = (num.split(/[.٫]/)[1] || "").length, value = parseFloat(num.replace(/[,٬]/g, "").replace("٫", "."));
+    const fmt = (x) => {
+      let [i, f] = Math.abs(x).toFixed(decimals).split(".");
+      if (group) i = i.replace(/\B(?=(\d{3})+(?!\d))/g, group);
+      return pre + ((x < 0 ? "-" : "") + i + (f ? point + f : "")).replace(/\d/g, (d) => set[d]) + post;
+    };
+    return { text, value, fmt };
+  }
+  const json = (el, key) => JSON.parse(el.dataset[key] || "[]");
+  const SVG = "http://www.w3.org/2000/svg";
+  const svg = (tag, attrs) => {
+    const n = document.createElementNS(SVG, tag);
+    for (const [k, v] of Object.entries(attrs)) n.setAttribute(k, v);
+    return n;
+  };
+  const charts = new Map();
+  function buildChart(el) {
+    const kind = el.dataset.kind, labels = json(el, "labels");
+    const vals = kind === "number" ? [numeric(el.dataset.value)] : json(el, "values").map(numeric);
+    const max = +el.dataset.max || Math.max(...vals.map((v) => v.value), 1e-9);
+    const c = { kind, vals, max, at: +el.dataset.at || 0, dur: +el.dataset.dur || 1 };
+    if (kind === "bar") {
+      c.cols = vals.map((v, i) => {
+        const col = document.createElement("div"), plot = document.createElement("div"), bar = document.createElement("div");
+        const val = document.createElement("div"), lab = document.createElement("div");
+        col.className = "col"; plot.className = "plot"; bar.className = "bar"; val.className = "val"; lab.className = "lab";
+        lab.textContent = labels[i] ?? "";
+        plot.append(bar, val); col.append(plot, lab); el.append(col);
+        return { bar, val };
+      });
+    } else if (kind === "line") {
+      // drawn in the chart's own pixels (measured once, layout is fixed), so nothing stretches in any format
+      const s = el.appendChild(svg("svg", { class: "plot" })), { width: w, height: h } = s.getBoundingClientRect();
+      const k = Math.min(P.width, P.height) / 1080, n = vals.length, pad = 40 * k, top = 70 * k, bottom = h - 70 * k;
+      s.setAttribute("viewBox", `0 0 ${w} ${h}`);
+      c.pts = vals.map((v, i) => [n > 1 ? pad + ((w - 2 * pad) * i) / (n - 1) : w / 2, bottom - (v.value / max) * (bottom - top)]);
+      c.line = s.appendChild(svg("polyline", { class: "ln", points: c.pts.map((p) => p.join(",")).join(" "), pathLength: 1 }));
+      c.dots = c.pts.map(([x, y]) => s.appendChild(svg("circle", { class: "dot", cx: x, cy: y, r: 9 * k })));
+      c.texts = c.pts.map(([x, y]) => s.appendChild(svg("text", { class: "val", x, y: y - 24 * k, "text-anchor": "middle" })));
+      c.pts.forEach(([x], i) => { s.appendChild(svg("text", { class: "lab", x, y: h - 8 * k, "text-anchor": "middle" })).textContent = labels[i] ?? ""; });
+    } else if (kind === "donut") {
+      const s = svg("svg", { viewBox: "0 0 200 200", class: "plot" }), total = vals.reduce((a, v) => a + v.value, 0) || 1;
+      c.C = 2 * Math.PI * 78;
+      let start = 0;
+      c.segs = vals.map((v, i) => {
+        const len = (v.value / total) * c.C, seg = s.appendChild(svg("circle", {
+          class: `seg s${i % 5}`, cx: 100, cy: 100, r: 78, "stroke-dasharray": `0 ${c.C}`, transform: "rotate(-90 100 100)" }));
+        const out = { seg, start, len };
+        start += len;
+        return out;
+      });
+      const legend = document.createElement("div");
+      legend.className = "legend";
+      c.legend = vals.map((v, i) => {
+        const row = legend.appendChild(document.createElement("div"));
+        row.innerHTML = `<i class="s${i % 5}"></i><span class="lab"></span><b class="val"></b>`;
+        row.querySelector(".lab").textContent = labels[i] ?? "";
+        return row.querySelector(".val");
+      });
+      el.append(s, legend);
+    }
+    charts.set(el, c);
+  }
+  function drawChart(el, t) {
+    const c = charts.get(el), q = (delay = 0) => outCubic(clamp((t - c.at - delay) / c.dur));
+    const show = (v, k) => (k >= 1 ? v.text : v.fmt(v.value * k));
+    if (c.kind === "number") el.textContent = show(c.vals[0], q());
+    if (c.kind === "bar") c.cols.forEach(({ bar, val }, i) => {
+      const k = q(0.1 * i), h = (c.vals[i].value / c.max) * 100 * k;
+      bar.style.height = `${h}%`;
+      val.style.bottom = `${h}%`;
+      val.textContent = show(c.vals[i], k);
+      val.style.opacity = k > 0 ? 1 : 0;
+    });
+    if (c.kind === "line") {
+      const k = q();
+      c.line.style.strokeDashoffset = 1 - k;
+      c.pts.forEach(([x], i) => {
+        const on = k >= (c.pts.length > 1 ? i / (c.pts.length - 1) : 0) - 1e-6 && k > 0;
+        c.dots[i].style.opacity = on ? 1 : 0;
+        c.texts[i].style.opacity = on ? 1 : 0;
+        c.texts[i].textContent = c.vals[i].text;
+      });
+    }
+    if (c.kind === "donut") {
+      const k = q(), drawn = k * c.C;
+      c.segs.forEach(({ seg, start, len }, i) => {
+        const l = clamp(drawn - start, 0, len);
+        seg.setAttribute("stroke-dasharray", `${l} ${c.C}`);
+        seg.setAttribute("transform", `rotate(${-90 + (start / c.C) * 360} 100 100)`);
+        c.legend[i].textContent = show(c.vals[i], l / len || 0);
+      });
+    }
+  }
+
   function animate(el, t) {
     for (const x of el.querySelectorAll("[data-at]")) {
+      if (charts.has(x)) drawChart(x, t);
       const q = outCubic(ramp(t, +x.dataset.at, +x.dataset.at + 0.4));
       const dir = x.closest("[dir=rtl]") ? -1 : 1;  // list rows slide in from the reading side
       x.style.opacity = q;
@@ -169,6 +276,7 @@
     for (const [font, sample] of P.fonts || []) await document.fonts.load(font, sample);  // ["600 80px Vazirmatn", "فارسی"]
     await document.fonts.ready;
     for (const s of P.shots) if (s.still) { const i = new Image(); i.src = s.still; await i.decode(); }
+    for (const el of document.querySelectorAll(".chart")) buildChart(el);
     for (const s of P.shots.filter((s) => s.three)) {
       const canvas = document.createElement("canvas");
       canvas.className = "three";

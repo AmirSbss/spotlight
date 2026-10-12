@@ -112,4 +112,51 @@ ae=$($CMP -metric AE -fuzz 5% "$u/check/t0.00.png" "$u/check/t0.99.png" null: 2>
 (( ${ae%.*} > 1000 )) || { echo "FAIL: web shot ignored push ($ae px changed)"; exit 1; }
 lum() { $IM "$@" -colorspace gray -format '%[fx:mean]' info:; }
 python3 -c "import sys; r = $(lum "$u/check/t0.00.png") / $(lum "$u/page.png" -crop 320x568+0+100); sys.exit(0 if 0.45 < r < 0.75 else print('FAIL: web shot ignored filter, luma ratio', r) or 1)"
+# charts: bars settle at heights in the data's ratio, a number settles on its exact source string (Persian digits and
+# separator kept) and counts up in the same digits, a donut's arcs follow the data, every chart stays inside the side
+# margins in both formats, and parallel capture changes no pixel
+CHARTS=$(cat <<'HTML'
+<div class="cap mid" data-a="0.1" data-b="2.9"><div class="chart" data-kind="bar" data-values='[10, 20, "40"]' data-labels='["A", "B", "C"]' data-at="0.2" data-dur="1"></div>
+  <div class="chart" data-kind="number" data-value="۱۲٬۴۰۰" data-at="0.2" data-dur="1" lang="fa"></div>
+  <div class="chart" data-kind="donut" data-values='["25%", "75%"]' data-labels='["x", "y"]' data-at="0.2" data-dur="1"></div>
+  <div class="chart" data-kind="line" data-values='[3, 1, 4, 1, 5]' data-labels='["1", "2", "3", "4", "5"]' data-at="0.2" data-dur="1"></div></div>
+HTML
+)
+for fmt in 320x568 568x320; do
+  W=${fmt%x*}; H=${fmt#*x}; c="$t/chart$fmt"; mkdir -p "$c"; cp "$ROOT/skills/spotlight/kit/scene.html" "$ROOT/skills/spotlight/kit/kit.js" "$c/"; : > "$c/fonts.css"
+  ln -s "$t/node_modules" "$c/node_modules"; $IM -size 64x64 xc:gray20 "$c/bg.png"
+  echo "window.SPOTLIGHT = { width: $W, height: $H, duration: 3, grain: 0, shots: [ { a: 0, b: 3, still: \"bg.png\" } ] };" > "$c/timeline.js"
+  python3 - "$c/scene.html" "$CHARTS" <<'PY'
+import sys; p = sys.argv[1]; s = open(p).read(); open(p, "w").write(s.replace('<div id="end">', sys.argv[2] + '\n  <div id="end">'))
+PY
+  out=$(cd "$c" && node --input-type=module -e "
+    import { launch } from '$ROOT/skills/spotlight/scripts/browser.mjs';
+    import { pathToFileURL } from 'node:url';
+    const b = await launch(), p = await b.newPage({ viewport: { width: $W, height: $H } });
+    p.on('pageerror', (e) => console.log('PAGEERROR', e.message));
+    await p.goto(pathToFileURL(process.cwd() + '/scene.html').href); await p.evaluate(() => window.ready);
+    const at = (t) => p.evaluate(async (t) => { await window.render(t);
+      const q = (s) => [...document.querySelectorAll(s)];
+      const side = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--side'));
+      return { bars: q('.chart .bar').map((e) => e.getBoundingClientRect().height),
+               num: q('.chart[data-kind=number]')[0].textContent,
+               arcs: q('.chart[data-kind=donut] .seg').map((e) => parseFloat(e.getAttribute('stroke-dasharray'))),
+               line: +q('.chart[data-kind=line] .ln')[0].style.strokeDashoffset,
+               inside: q('.chart').every((e) => { const r = e.getBoundingClientRect(); return r.width > 10 && r.left >= side - 1 && r.right <= innerWidth - side + 1; }) }; }, t);
+    console.log(JSON.stringify({ mid: await at(0.7), end: await at(1.8) }));
+    await b.close();")
+  python3 - "$out" "$fmt" <<'PY' || { echo "FAIL $fmt: charts"; echo "$out"; exit 1; }
+import json, sys
+r = json.loads(sys.argv[1].splitlines()[-1]); e, m = r["end"], r["mid"]
+b = e["bars"]; assert len(b) == 3 and b[0] > 4 and abs(b[1] / b[0] - 2) < 0.04 and abs(b[2] / b[0] - 4) < 0.08, b
+assert e["num"] == "۱۲٬۴۰۰", e["num"]
+assert set(m["num"]) <= set("۰۱۲۳۴۵۶۷۸۹٬") and 0 < int(m["num"].replace("٬", "").translate(str.maketrans("۰۱۲۳۴۵۶۷۸۹", "0123456789"))) < 12400, m["num"]
+a = e["arcs"]; assert len(a) == 2 and abs(a[1] / a[0] - 3) < 0.05, a
+assert e["line"] < 0.001 and m["line"] > 0.01, (m["line"], e["line"])
+assert e["inside"] and m["inside"], "a chart crosses the side margins"
+PY
+done
+q="$t/chart320x568"; (cd "$q" && CAPTURE_WORKERS=1 node "$ROOT/skills/spotlight/scripts/capture.mjs" frames >/dev/null && (cd out && md5sum *.jpg) > serial.md5 \
+  && CAPTURE_WORKERS=4 node "$ROOT/skills/spotlight/scripts/capture.mjs" frames >/dev/null && (cd out && md5sum -c --quiet ../serial.md5)) \
+  || { echo "FAIL: parallel capture changed chart pixels"; exit 1; }
 echo "kit: ok"

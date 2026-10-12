@@ -52,6 +52,35 @@
   .row .n { font: 600 calc(34px * var(--k))/1 var(--body); color: var(--accent); min-width: calc(60px * var(--k)); }
   .row .t { font: 600 calc(70px * var(--k))/1.1 var(--display); color: var(--text); }
   bdi { unicode-bidi: isolate; }
+
+  /* charts (kit.js builds the inside): every number is the data's own string once it settles */
+  .chart { width: 100%; max-width: calc(1000px * var(--k)); color: var(--text); font: 500 calc(32px * var(--k))/1.25 var(--body); }
+  .chart + .chart { margin-top: calc(40px * var(--k)); }
+  .chart[data-kind=number] { font: 700 calc(190px * var(--k))/1 var(--display); color: var(--accent); font-variant-numeric: tabular-nums; }
+  .chart[data-kind=bar] { display: flex; align-items: flex-end; gap: calc(28px * var(--k)); }
+  .chart[data-kind=bar] .col { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; }
+  .chart[data-kind=bar] .plot { position: relative; width: 100%; height: calc(var(--chart-h, 440px) * var(--k)); display: flex; align-items: flex-end; justify-content: center; }
+  .chart[data-kind=bar] .bar { width: 68%; height: 0; background: var(--accent); border-radius: calc(8px * var(--k)) calc(8px * var(--k)) 0 0; }
+  .chart[data-kind=bar] .val { position: absolute; left: 0; right: 0; bottom: 0; margin-bottom: calc(12px * var(--k)); text-align: center;
+    font: 700 calc(40px * var(--k))/1 var(--display); font-variant-numeric: tabular-nums; }
+  .chart[data-kind=bar] .lab { margin-top: calc(14px * var(--k)); color: rgba(255,255,255,.8); text-align: center; overflow-wrap: anywhere; }
+  .chart[data-kind=line] .plot { display: block; width: 100%; height: calc(var(--chart-h, 440px) * var(--k)); overflow: visible; }
+  .chart[data-kind=line] .ln { fill: none; stroke: var(--accent); stroke-width: calc(7px * var(--k)); stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 1 1; }
+  .chart[data-kind=line] .dot { fill: var(--accent); }
+  .chart[data-kind=line] .val { fill: var(--text); font: 700 calc(36px * var(--k)) var(--display); }
+  .chart[data-kind=line] .lab { fill: rgba(255,255,255,.8); font: 500 calc(32px * var(--k)) var(--body); }
+  .chart[data-kind=donut] { display: flex; align-items: center; gap: calc(40px * var(--k)); }
+  .chart[data-kind=donut] .plot { width: 46%; flex: none; }
+  .chart[data-kind=donut] .seg { fill: none; stroke-width: 30; }
+  .chart[data-kind=donut] .legend { flex: 1; min-width: 0; display: grid; gap: calc(18px * var(--k)); }
+  .chart[data-kind=donut] .legend div { display: flex; align-items: center; gap: calc(14px * var(--k)); }
+  .chart[data-kind=donut] .legend i { width: calc(26px * var(--k)); height: calc(26px * var(--k)); border-radius: 50%; flex: none; }
+  .chart[data-kind=donut] .legend .val { margin-inline-start: auto; font: 700 calc(40px * var(--k))/1 var(--display); }
+  .chart .s0 { stroke: var(--accent); background: var(--accent); }
+  .chart .s1 { stroke: color-mix(in srgb, var(--accent) 55%, var(--paper)); background: color-mix(in srgb, var(--accent) 55%, var(--paper)); }
+  .chart .s2 { stroke: color-mix(in srgb, var(--accent) 45%, var(--ink)); background: color-mix(in srgb, var(--accent) 45%, var(--ink)); }
+  .chart .s3 { stroke: color-mix(in srgb, var(--paper) 70%, var(--ink)); background: color-mix(in srgb, var(--paper) 70%, var(--ink)); }
+  .chart .s4 { stroke: color-mix(in srgb, var(--paper) 35%, var(--ink)); background: color-mix(in srgb, var(--paper) 35%, var(--ink)); }
   [data-at] { opacity: 0; }
 
   /* end card: wipes in from the bottom at SPOTLIGHT.end */
