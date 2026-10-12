@@ -1,0 +1,109 @@
+# Sound
+
+Music, effects, live clip sound and narration, mixed by one script. Run it from `$OUT/work`:
+`uv run --project <skill-dir>/scripts python <skill-dir>/scripts/mix.py mix.json` → `mix.wav`, `music-only.wav`, `mix-report.txt`.
+The first run downloads its Python packages (about a minute).
+
+## Music
+
+The user's track always wins (`--music <file>`, or an audio file in the inputs). `--music none` renders a silent track. Otherwise, pick one bundled track by what the buyer's *customers* would want to hear, not by "tech launch":
+
+| File | Mood | Fits | Tempo | Length | Shape |
+|---|---|---|---|---|---|
+| `assets/music/calm.mp3` | gentle chill-out | services, clinics, `polished`, `deadpan`, explainers in `clear` | ~99 BPM | 136 s | ~15 s beatless intro, groove from ~20 s |
+| `assets/music/warm-acoustic.mp3` | warm, happy folk | cafés, small shops, people, `default` and `recap` promos | uncertain | 121 s | light intro, full band from ~17 s |
+| `assets/music/upbeat.mp3` | bright pop-electronic | launches, `energetic`, `chaotic`, `app-store`, `yc-parody` | 120 BPM | 156 s | short intro, beat from ~9 s, breakdown mid-track |
+| `assets/music/minimal-tech.mp3` | minimal electronic | software and dev tools, `keynote`, any explainer up to 180 s | ~120 BPM | 193 s | steady kick from the first second |
+| `assets/music/cinematic.mp3` | gentle cinematic build | `cinematic`, `premium`, `documentary` | uncertain | 114 s | soft first ~30 s, the lift lands at ~32 s |
+
+`assets/music/cues/<name>.json` holds each track's per-second loudness, tempo and strong cues (the output of `$F track --json`), so you can choose the window without measuring. For the user's own track, run `python3 $F track <file>`.
+- Start where the track already moves (a pulse even when chill), so frame 0 isn't a fade-in from nothing.
+- Let the lift land on the reveal or the CTA.
+- For energetic tones, cut on the beats.
+- No vocals and no epic risers.
+- The music must not fade before the end card lands. `fade_out` covers the last seconds of `duration`: keep it ≤ 1 s, and make sure the end card is already up when it starts.
+- The window must reach the end. If `mix-report.txt` says `music runs out`, start earlier or pick a longer track.
+
+## Effects (`--no-sfx` turns them off)
+
+| File | Sound | Use |
+|---|---|---|
+| `assets/sfx/whoosh-1.ogg` | soft card swish, 0.6 s | a calm transition |
+| `assets/sfx/whoosh-2.ogg` | fuller air swoosh, 0.5 s | an energetic transition |
+| `assets/sfx/whoosh-3.ogg` | airy bright swell, 0.7 s | a reveal, a section change |
+| `assets/sfx/click-1.ogg` | soft UI click | a button press |
+| `assets/sfx/click-2.ogg` | light tick | a checkbox, a small selection |
+| `assets/sfx/click-3.ogg` | crisp mouse click | a cursor click |
+| `assets/sfx/click-4.ogg` | button press | a tap |
+| `assets/sfx/type-1.ogg` | 2.5 s of real typing | a typed line (trim with the shot) |
+| `assets/sfx/type-2.ogg` | one keystroke | short typing, one per key |
+| `assets/sfx/toggle-1.ogg` | switch toggle | a toggle on |
+| `assets/sfx/toggle-2.ogg` | brighter toggle | a toggle off, a second toggle |
+| `assets/sfx/pop-1.ogg` | rounded pop | a pin or badge landing |
+| `assets/sfx/pop-2.ogg` | softer, longer pop | a card appearing |
+| `assets/sfx/pop-3.ogg` | short bright pluck | a number or tag appearing |
+| `assets/sfx/chime-1.ogg` | soft confirmation chime | done, sent, booked |
+| `assets/sfx/chime-2.ogg` | warmer, lower chime | a calmer confirmation |
+| `assets/sfx/thud-1.ogg` | soft low thud | a heavy element settling |
+| `assets/sfx/thud-2.ogg` | light knock | a light element settling |
+
+- One short, soft whoosh per *real* transition: a change of scene or section, not every cut.
+- Clean UI ticks only on simulated actions: a click, typing, a toggle.
+- A pop on a pin, a badge or a number landing.
+- A soft chime on a confirmation: done, sent, booked.
+- Density follows the tone. Deadpan, premium, polished, clear and documentary are sparse (2–4 effects in a 20 s video); chaotic and energetic are dense.
+- Never a sting over a music resolve, and nothing on the end card's last second.
+
+Put each effect's `t` on the frame where the action happens (`frame / 30`). `mix.py` sets every gain itself (its own frequency band, +3.5 dB over the music there, with caps), so leave `target_db` and `cap_db` out unless the report says an effect is buried.
+
+## Live sound from clips
+
+Add a clip's own sound only where it helps: a crowd, an espresso machine, a laugh. The entry is `{"file": "<clip>", "start": <in-point s>, "dur": <s>, "t": <s on the timeline>}`. `gain_db` is relative to the music bed. The default `-15` keeps it under the music; use `-6` for a moment that should be heard, such as the crowd at the peak. Clips fade in and out over 60 ms on their own.
+
+## Narration (`--voice`)
+
+Narration is off unless asked for, and the captions stay on screen either way. It suits `explain` best.
+1. Right after the plan, write `work/lines.json`: `[{"id": "s1", "text": "…", "lang": "en"}, …]`, one entry per sentence or beat, with the text exactly as it should be spoken. Write numbers, years, prices and abbreviations the way they're said. Spell Latin brand names inside Persian or Arabic text in that script, as they're pronounced: Piper reads Latin words in those languages badly.
+2. Run `python3 <skill-dir>/scripts/voice.py lines.json` → `voice/<id>.wav` (levelled to −16 LUFS) and `durations.json`. The first use of a voice downloads it, 60–115 MB, into `~/.cache/spotlight/piper/`. It exits 2 with the install command when Piper is missing: tell the user, and render without narration.
+3. Time the shots to the lines: each beat lasts at least its line's duration plus about 0.3 s, and lines never overlap. A caption that carries the same sentence lands with its line.
+4. Add each line to `mix.json` as `{"file": "voice/<id>.wav", "t": <s>}`. The music ducks under it on its own.
+5. If `voice.py` prints a `credit` line, put it in `sources.md` and `caption.txt`.
+
+The default voice for each language was chosen for its licence. A narrated promo is commercial use, and most Piper voices are fine-tuned from a research-only base.
+
+| `lang` | Voice | Licence | Note |
+|---|---|---|---|
+| `en` | `en_US-ljspeech-high` | public domain | clear US female narrator |
+| `fa` | `fa_IR-gyro-medium` | CC0 dataset (as declared) | understandable, but flat and sometimes wrong on ezafe and homographs: tell the user before you narrate in Persian |
+| `it` | `it_IT-serena-high` | CC BY 4.0 | prints a credit line |
+| `nl` | `nl_NL-alex-medium` | CC0 | |
+| `uk` | `uk_UA-ukrainian_tts-medium` (speaker 0) | CC0 | |
+
+- **Arabic, Turkish, Spanish, Portuguese, Russian, Polish, Chinese, Hindi:** no Piper voice with a clean licence. Render without narration unless the user names a voice and accepts its licence.
+- **German, French:** the `de_DE-mls-medium` / `fr_FR-mls-medium` voices are CC BY 4.0 with hundreds of speakers. Set `"voice"` and `"speaker"` on the line after listening to a few.
+
+For any other voice, set `"voice"` to a Piper voice name (huggingface.co/rhasspy/piper-voices) or to a local `.onnx` path, and check its model card's licence first.
+
+## mix.json
+
+Paths are relative to `mix.json` (so `voice/s1.wav` works) or absolute (bundled assets: `<skill-dir>/assets/…`).
+
+```json
+{
+  "music": {"file": "<skill-dir>/assets/music/upbeat.mp3", "start": 12.0, "fade_in": 0.2, "fade_out": 0.8},
+  "sfx":   [{"file": "<skill-dir>/assets/sfx/whoosh-1.ogg", "t": 3.0},
+            {"file": "<skill-dir>/assets/sfx/click-1.ogg", "t": 6.4}],
+  "clips": [{"file": "clips/IMG_0042.MOV", "start": 1.2, "dur": 2.0, "t": 8.0, "gain_db": -15}],
+  "voice": [{"file": "voice/s1.wav", "t": 0.5}],
+  "duration": 20.0
+}
+```
+
+`duration` is the video's length (`duration` in `timeline.js`). Read `mix-report.txt` after every run, and fix the timing and re-run if any of these fails:
+- every effect says `target`, `hf cap`, `peak cap` or `floor`, and none says `skipped`;
+- there is no `music runs out` line;
+- no voice line `runs past the end`.
+
+## Deliver
+
+`mix.wav` goes into `video.mp4`. When the mix has effects or narration, also encode `music-only.wav` into `music-only.mp4`, with the same frames and poster. That is the version for a platform where the user adds their own sound or voice.

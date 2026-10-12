@@ -12,7 +12,7 @@ Hook question (≤ 6 s) → 3–5 sections, each a claim with one piece of evide
 - **Numbers:** a big-number card shows the value verbatim from the data with its unit and source line ("Source: survey.csv, 2025"). Until the chart layer arrives (phase 3), comparisons are 2–4 big numbers side by side, never a hand-drawn chart.
 - **Lists:** at most 5 rows, each ≤ 5 words, equal spacing, aligned left edges.
 - **Pages:** scroll the real page (`web`) to the part that proves the claim and stay on it for ≥ 1.5 s while it keeps scrolling at ≥ 80 px/s (output px); a slower scroll over the page's flat bands measures frozen.
-- **Narration** (`--voice`, phase 2) carries the argument; until then, on-screen text carries it. Keep reading time ≥ 0.3 s per word.
+- **Narration** (`--voice`) carries the argument, read by local TTS (`references/sound.md`); the on-screen text still carries it on mute. Keep reading time ≥ 0.3 s per word.
 
 ## Tones
 | Tone | Feel | Pacing |

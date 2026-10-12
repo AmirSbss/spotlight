@@ -18,10 +18,12 @@ Usage: `/spotlight [url | folder | files | project | "description"]… [options]
 | `--format vertical\|landscape\|square` | vertical for brag/promo, landscape for explain; 1080×1920 / 1920×1080 / 1080×1080, 30 fps |
 | `--duration <s>` | brag 20, promo 20, explain 90 |
 | `--lang <code>` | from the brief → the site's `lang` → text in the footage → ask |
-| `--music <file>\|none` | an audio file in the inputs, otherwise ask for a track or render with a silent track (a bundled library arrives in phase 2) |
+| `--music <file>\|none` | an audio file in the inputs, otherwise a bundled track matched to the tone (`references/sound.md`) |
+| `--voice` | off; on reads narration aloud with local Piper TTS (`references/sound.md`) |
+| `--no-sfx` | effects on, placed by the sound rules |
 | `--no-ai` | AI images on when the bridge works |
 
-Deliverables go to `spotlight-output/` (timestamped `spotlight-output-YYYY-MM-DD-HHmmss/` if it exists): `video.mp4` (poster embedded as cover art), `poster.jpg`, `caption.txt`, `plan.md`, `sources.md`, and `work/`. Below, `OUT` is that folder's absolute path; create `$OUT/work` first and run the commands from there. **Never modify, move or delete anything in the user's inputs.** Before anything else run `bash <skill-dir>/scripts/doctor.sh`; if it reports a missing required tool, say which and stop.
+Deliverables go to `spotlight-output/` (timestamped `spotlight-output-YYYY-MM-DD-HHmmss/` if it exists): `video.mp4` (poster embedded as cover art), `music-only.mp4` (when the mix has effects or narration), `poster.jpg`, `caption.txt`, `plan.md`, `sources.md`, and `work/`. Below, `OUT` is that folder's absolute path; create `$OUT/work` first and run the commands from there. **Never modify, move or delete anything in the user's inputs.** Before anything else run `bash <skill-dir>/scripts/doctor.sh`; if it reports a missing required tool, say which and stop.
 
 ## Modes
 | Mode | When | Read |
@@ -30,7 +32,7 @@ Deliverables go to `spotlight-output/` (timestamped `spotlight-output-YYYY-MM-DD
 | `promo` | footage or photos are the main material | `references/promo.md` |
 | `explain` | a topic or argument, data files, or the user says presentation/explainer | `references/explain.md` |
 
-Inputs mix freely: a promo can quote the brand's site, an explainer can use footage. Read exactly one mode file (plus the Inventory and Footage sections of `references/promo.md` whenever footage or photos are in the mix), plus `references/quality-bar.md` and `references/critic.md` when you reach those steps.
+Inputs mix freely: a promo can quote the brand's site, an explainer can use footage. Read exactly one mode file (plus the Inventory and Footage sections of `references/promo.md` whenever footage or photos are in the mix), plus `references/sound.md`, `references/quality-bar.md` and `references/critic.md` when you reach those steps.
 
 ## 1. Gather
 - **Media:** `python3 $F prep $OUT/work <files…>` → manifest, upright sRGB stills, contact sheets (see the mode file).
@@ -42,7 +44,7 @@ Inputs mix freely: a promo can quote the brand's site, an explainer can use foot
 What it is, who it's for, the one message, the one action (CTA), the facts you'll show **with their source** (brief, site page, footage file, data file), and the don'ts. If the name, the CTA or the language is still unknown, ask **one** question listing everything missing. Never guess a phone number, a price or an address.
 
 ## 3. Plan → `plan.md`
-The angle, the hook, and a shot or section list. Each entry has its source (copy the path from the manifest or site files), in/out points or motion, its on-screen text (verbatim from the sources), its duration and its transition. Add the music and the cue times you'll cut on, plus the AI assets table. Durations must add up to the target. Write `sources.md` alongside: every line of on-screen text and every number → where it came from, plus the AI ledger (file, prompt, purpose, shot).
+The angle, the hook, and a shot or section list. Each entry has its source (copy the path from the manifest or site files), in/out points or motion, its on-screen text (verbatim from the sources), its duration and its transition. Add the music (track and window) and the cue times you'll cut on, the effects (time → file → why, unless `--no-sfx`), with `--voice` the narration lines, plus the AI assets table. With `--voice`, run `voice.py` right after the plan (`references/sound.md`): the line durations set the shot timing. Durations must add up to the target. Write `sources.md` alongside: every line of on-screen text and every number → where it came from, plus the AI ledger (file, prompt, purpose, shot).
 
 ## 4. Build
 ### The page
@@ -88,7 +90,7 @@ Optional dependency: [gpt-image-bridge](https://github.com/oakplank/gpt-image-br
 - **Label it:** list AI shots in the plan's AI table and in your report, and add a short "Includes AI-generated illustration" line to `caption.txt` (in its language). Some platforms ask for this.
 
 ## 5. Sound
-Until the phase 2 sound layer lands, use the user's track. Pick its window with `python3 $F track <track>`: it prints per-second loudness, plus tempo and strong cues when `uv` is available. Cut on its beats for energetic tones, and let big moments land near strong cues. Keep useful live sound from clips about 15 dB under the music, with 50–100 ms fades. Mix to `work/mix.wav`; the fade-out must end by the last frame, and the music must not fade before the end card lands.
+Follow `references/sound.md`: pick the music (the user's track, else a bundled one), place the effects (unless `--no-sfx`), add live clip sound where it helps, and the narration lines with `--voice`. Write `work/mix.json` and run, from `$OUT/work`, `uv run --project <skill-dir>/scripts python <skill-dir>/scripts/mix.py mix.json` → `mix.wav`, `music-only.wav`, `mix-report.txt`. Read the report and fix anything it flags. The music must not fade before the end card lands.
 
 ## 6. Capture, encode, check
 ### Check before the full render
@@ -104,7 +106,7 @@ A plain crossfade between two busy shots makes a muddy double exposure: dip thro
 
 ### Encode
 
-Pick the poster frame first (see Deliver) and copy the chosen `out/NNNNN.jpg` to `$OUT/poster.jpg`. Don't copy it over frame 0: a settled poster frame followed by the opening frames flashes for one frame at the start and on every loop. Then run `python3 $F encode out mix.wav $OUT/video.mp4 --poster $OUT/poster.jpg`. `--poster` embeds it as cover art, which players and file browsers show. Pass `none` instead of the wav for a silent track (a video with no audio track turns into a GIF on Telegram).
+Pick the poster frame first (see Deliver) and copy the chosen `out/NNNNN.jpg` to `$OUT/poster.jpg`. Don't copy it over frame 0: a settled poster frame followed by the opening frames flashes for one frame at the start and on every loop. Then run `python3 $F encode out mix.wav $OUT/video.mp4 --poster $OUT/poster.jpg`. `--poster` embeds it as cover art, which players and file browsers show. Pass `none` instead of the wav for a silent track (a video with no audio track turns into a GIF on Telegram). With effects or narration in the mix, also run `python3 $F encode out music-only.wav $OUT/music-only.mp4 --poster $OUT/poster.jpg`.
 
 It writes BT.709-tagged H.264 yuv420p + AAC with `+faststart`, exactly frames/30 seconds long, loudness-normalized to −14 LUFS (two-pass, true peak under −1.5). It refuses a frame folder that mixes PNG and JPG, has gaps in its numbering, or has a file that isn't really the format its name says, and it checks the frame count of what it wrote.
 
@@ -116,6 +118,7 @@ Follow `references/critic.md`: a fresh critic reviews the actual render, you fix
 ## 8. Deliver
 - **`poster.jpg`:** the strongest settled frame, embedded as cover art (`encode --poster`), never copied over frame 0.
 - **`caption.txt`:** in the video's language, 1–3 sentences plus the CTA, optional hashtags, and a short AI-illustration label if any AI image is used.
+- **`music-only.mp4`:** the same video over the music and live sound alone, when the mix has effects or narration.
 - **`plan.md`, `sources.md`, `work/`** stay.
 - **Tell the user:** where the files are, the angle in one sentence, the `check` numbers, the critic's verdict, and which shots are AI. Offer a re-cut, another tone or another format (re-using `work/`).
 

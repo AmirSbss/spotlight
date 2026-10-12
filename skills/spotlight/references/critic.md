@@ -11,7 +11,7 @@ Method: extract frames yourself with ffmpeg (a contact sheet every 0.25 s, plus 
 Report (≤ 700 words), also written to <work/critic-N.md>:
 1. Per section: time range, what's on screen, problems ranked (holds, empty frame, collisions, text over signage or faces, unreadable text, wrong crops, dark or muddy frames, third-party logos, anything not supported by the brief or sources).
 2. Message: on mute, can a stranger say what it is and what to do next? Is every claim on screen in `sources.md`?
-3. Sound: does audio land on the cuts; does the music fade before the end card lands?
+3. Sound: does audio land on the cuts; is every effect on a real transition or action, never a sting over a resolve; is the narration clear over the music; does the music fade before the end card lands?
 4. The top 6 changes by impact, concrete and implementable. End with SHIP or ONE MORE PASS.
 
 ## Verification critic prompt

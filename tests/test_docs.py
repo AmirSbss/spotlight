@@ -47,6 +47,23 @@ def main():
     assert final and all("--out $OUT/work" in c for c in final), final
     for stale in ("promo-output", "/promo ", "window.PROMO", "skills/promo", "PROMO_SRGB_ICC"):
         assert stale not in every, f"stale reference: {stale}"
+    # P2: sound is a real step, not a promise
+    assert "sound.md" in refs, "references/sound.md is missing"
+    for flag in ("--voice", "--no-sfx", "--music"):
+        assert flag in skill, f"SKILL.md options don't name {flag}"
+    assert "music-only.mp4" in skill, "SKILL.md doesn't deliver music-only.mp4"
+    assert "phase 2" not in every.lower(), "a doc still says phase 2 is coming"
+    mixes = re.findall(r"[^\n`]*scripts/mix\.py[^\n`]*", every)
+    assert mixes and all("uv run --project" in m for m in mixes), mixes
+    for path in set(re.findall(r"assets/(?:music|sfx)/[\w.-]+\.(?:mp3|ogg|wav|json|md)", every)):
+        assert (SK / path).exists(), f"docs name {path}, which doesn't exist"
+    sound = refs["sound.md"]
+    for p in sorted((SK / "assets/music").glob("*.mp3")) + sorted((SK / "assets/sfx").glob("*.ogg")):
+        assert p.name in sound, f"sound.md never offers {p.name}"
+    voice = (SK / "scripts/voice.py").read_text()
+    assert "voice.py" in sound and "durations.json" in sound and "lines.json" in sound
+    for lang in re.findall(r'^\s+"([a-z]{2})": "', voice, re.M):
+        assert f"`{lang}`" in sound, f"sound.md's voice table misses {lang}"
     print("docs: all checks passed")
 
 
