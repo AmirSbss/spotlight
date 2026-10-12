@@ -1,6 +1,6 @@
 # Plan: Mahoor Coffee promo (promo, `default` tone, vertical 1080x1920, 20 s, English; Persian cut from the same timeline)
 
-**Angle:** no offer, just the craft. A barista's shaker flip stops the scroll. Then espresso, the pour over iced milk, a latte built by hand, drinks at the counter, the finished latte, and finally the logo and the Instagram handle.
+**Angle:** no offer. The footage shows the craft, and the captions carry the feeling of a good day with a good coffee. A barista's shaker flip stops the scroll. Then espresso, the pour over iced milk, a latte built by hand, drinks at the counter, the finished latte, and finally the logo and the Instagram handle.
 **Hook (0–2 s):** the shaker flip, the strongest moving shot, with the café's name already on screen at frame 0.
 **People:** a barista (arms and gloved hands: the flip, the pours) and a customer at the counter (hands and beard). The owner confirmed faces may stay.
 **Third-party marks:**
@@ -12,12 +12,12 @@
 
 | # | Time | Source (clip, in → out) | Motion | On-screen text | Cut |
 |---|---|---|---|---|---|
-| s1 | 0.0–2.0 | video_9a5145d958b7.mov 0.4 → 2.4 (the shaker flip; machine lettering and model number blurred) | push 1→1.05 | MAHOOR COFFEE (frame 0, held through s2) | — |
-| s2 | 2.0–4.5 | video_fe34ef5fea0e.mov 24.5 → 27.0 (espresso running into the glass) | push 1→1.08 | Espresso, pulled at the bar | on the beat |
-| s3 | 4.5–7.5 | video_df8596906650.mov 4.3 → 7.3 (espresso poured over iced milk) | push 1→1.04 | Poured over ice and milk | on the beat |
-| s4 | 7.5–10.0 | video_3f0d1fd139f6.mov 3.5 → 6.0 (milk poured, the latte layers) | — | Built by hand | on the beat |
-| s5 | 10.0–13.0 | video_718a775c1040.mov 0.45 → 3.45 (a customer at the counter with two drinks) | push 1.22→1.28 from the top (drops a blurred glove) | Stay a while | on the beat |
-| s6 | 13.0–16.0 | video_3f0d1fd139f6.mov 7.45 → 10.45 (the finished latte) | push 1→1.08 | — | on the beat |
+| s1 | 0.0–2.0 | video_9a5145d958b7.mov 0.4 → 2.4 (the shaker flip; machine lettering and model number blurred) | push 1→1.05 | MAHOOR COFFEE / Some days need a good coffee. (frame 0, held through s2) | — |
+| s2 | 2.0–4.5 | video_fe34ef5fea0e.mov 24.5 → 27.0 (espresso running into the glass) | push 1→1.08 | (the hook line holds) | on the beat |
+| s3 | 4.5–7.5 | video_df8596906650.mov 4.3 → 7.3 (espresso poured over iced milk) | push 1→1.04 | Today is one of them. | on the beat |
+| s4 | 7.5–10.0 | video_3f0d1fd139f6.mov 3.5 → 6.0 (milk poured, the latte layers) | — | Take your time. | on the beat |
+| s5 | 10.0–13.0 | video_718a775c1040.mov 0.45 → 3.45 (a customer at the counter with two drinks) | push 1.22→1.28 from the top (drops a blurred glove) | Better with a friend. | on the beat |
+| s6 | 13.0–16.0 | video_3f0d1fd139f6.mov 7.45 → 10.45 (the finished latte) | push 1→1.08 | Here's to a good day. | on the beat |
 | End | 16.0–20.0 | end card (cream; the logo multiplied onto it; breathes 1.00→1.03) | wipe | logo / Follow us on Instagram / @mahoor_hills (17.0) | wipe |
 
 Captions sit 190 px above the template's bottom safe line, clear of Instagram's caption overlay.
@@ -31,7 +31,7 @@ Captions sit 190 px above the template's bottom safe line, clear of Instagram's 
 **Live sound:** none. The clips' audio under the espresso and the pour is strongly tonal (the café's own background music, not the hiss of the machine), so it would clash with the track.
 **AI assets:** none.
 
-**Persian cut:** the same frames and mix, with captions in Persian (Vazirmatn) running right to left. The name and the handle stay in Latin, as in the logo. The right-aligned captions sit 150 px further in, clear of the Reels like/comment/share rail.
+**Persian cut:** the same frames and mix, with captions in Persian (Vazirmatn) running right to left. The name and the handle stay in Latin, as in the logo. The right-aligned captions sit 80 px further in, clear of the Reels like/comment/share rail (which starts at x≈970).
 
 ## Critic rounds
 - **Round 1** (`critics/critic-1.md`): ONE MORE PASS. Fixed:
@@ -52,3 +52,17 @@ Captions sit 190 px above the template's bottom safe line, clear of Instagram's 
 - **Round 3** (`critics/critic-3.md`): **SHIP**. All of round 2's fixes were verified in both cuts, and no new real defect turned up.
   - One cosmetic note was acted on: over a pale sleeve in the first 2 s, the café's name reached only 2–3:1 contrast, so it got a firmer shadow.
   - Left as they are (cosmetic): a gloved hand passing at the top of the closing shot, the customer's chin at the counter, the shaker's motion blur, and a slightly stronger hit 0.25 s before some cuts.
+
+## Re-cut: mood lines (the owner's request)
+The first cut's captions named what was on screen ("Espresso, pulled at the bar", "Poured over ice and milk", "Built by hand", "Stay a while"). The owner asked for words about a good day with a good coffee instead. The new thread runs:
+1. Some days need a good coffee.
+2. Today is one of them.
+3. Take your time.
+4. Better with a friend.
+5. Here's to a good day.
+
+The frames, cuts and sound are unchanged. The finished latte now carries the last line.
+- **Round 4** (`critics/critic-4.md`, on the mood-line re-cut): **SHIP** for both cuts, no real defects. Its optional notes are left to the owner:
+  - «سر فرصت» for «با حوصله»;
+  - a wider Persian inset;
+  - a firmer kicker shadow in the Persian cut.

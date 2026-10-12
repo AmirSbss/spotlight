@@ -39,7 +39,7 @@ It sorts the clips, drops the shaky and dark ones, opens on the strongest moving
 
 [![A 20-second promo spotlight cut for Mahoor Coffee from the café's own phone clips](examples/promo/preview.gif)](examples/promo/video.mp4)
 
-*A 20-second promo for [Mahoor Coffee](https://www.instagram.com/mahoor_hills/), cut from twelve of the café's own phone clips and its logo, with no offer by the owner's choice. [Watch it with sound](examples/promo/video.mp4), or see [the Persian cut](examples/promo/video-fa.mp4). It went through three critic rounds, which caught the espresso machine maker's slogan, another café's branded cup and captions hidden under Instagram's buttons ([plan](examples/promo/plan.md), [reports](examples/promo/critics)). The footage and logo belong to the café and are used with permission.*
+*A 20-second promo for [Mahoor Coffee](https://www.instagram.com/mahoor_hills/), cut from twelve of the café's own phone clips and its logo. There's no offer, by the owner's choice: its captions are one thread about a good day with a good coffee. [Watch it with sound](examples/promo/video.mp4), or see [the Persian cut](examples/promo/video-fa.mp4). It went through three critic rounds, which caught the espresso machine maker's slogan, another café's branded cup and captions hidden under Instagram's buttons ([plan](examples/promo/plan.md), [reports](examples/promo/critics)). The footage and logo belong to the café and are used with permission.*
 
 ### An explainer with real numbers
 
