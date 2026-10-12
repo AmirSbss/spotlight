@@ -77,6 +77,8 @@ def main():
     for mod in set(re.findall(r"three/([a-z-]+\.js)", every)):
         assert (SK / "kit/three" / mod).exists(), f"docs name kit/three/{mod}, which doesn't exist"
     assert "phase 3" not in every.lower(), "a doc still says phase 3 is coming"
+    # promo captions carry a mood in the brand's voice; a caption that names what's on screen wastes the line
+    assert "sell the feeling" in refs["promo.md"] and "mood lines" in skill and "only name what's already on screen" in refs["critic.md"]
     print("docs: all checks passed")
 
 

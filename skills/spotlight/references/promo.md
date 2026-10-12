@@ -13,7 +13,14 @@
    - text visible in the footage (signs, packaging, menus, screens);
    - the brand's own website, when the user points you at it: scrape a few key pages (home, about, services, contact) and quote them. Prefer its own wording in the promo's language (many sites have `/fa`, `/ar` versions) over translating.
    If the name, the CTA or the language is still unknown, ask **one** question that lists everything missing. Never guess a phone number, a price or an address.
-5. Before planning, answer: What is it (one sentence)? Who is it for? What's the offer? What's the hero shot? What order tells the story? What's the CTA? Which tone? What does the story need that the footage doesn't show? What's the one-line caption?
+
+   **Captions sell the feeling, not the footage.**
+   - The viewer already sees the espresso, so a caption that names it ("Espresso, pulled at the bar") wastes the line.
+   - Write one short thread in the brand's voice that the shots illustrate: a mood, a moment, an invitation ("Some days need a good coffee. / Today is one of them. / Better with a friend. / Here's to a good day.").
+   - Give each line its own shot, with ≤ 5 words where you can.
+   - These mood lines are yours to write: list them in `sources.md` as authored. They claim nothing.
+   - Facts (prices, offers, hours, awards, "best", "fresh", "handmade") still come only from the brief, text in the footage or the brand's own site.
+5. Before planning, answer: What is it (one sentence)? Who is it for? What's the offer? What's the hero shot? What order tells the story? What's the CTA? Which tone? What does the story need that the footage doesn't show? What feeling should a viewer leave with, and which lines carry it? What's the one-line caption?
 
 ## Shape
 
