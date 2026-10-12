@@ -38,6 +38,10 @@ def band_peak(x, lo, hi):
     return float(np.max(np.abs(sosfiltfilt(sos, x[:, 0]))))
 
 
+def bandpass(x, lo, hi):
+    return sosfiltfilt(butter(4, [lo, hi], btype="band", fs=SR, output="sos"), x, axis=0)
+
+
 def rms_db(x):
     return 20 * np.log10(max(float(np.sqrt(np.mean(x ** 2))), 1e-9))
 
@@ -152,9 +156,11 @@ def main():
         # the bed lands on its target: fade-in opens from (near) silence, then holds a steady level
         assert rms_db(win(bed, 0, 0.08)) < rms_db(win(bed, 2, 3)) - 14, "fade-in does not open from silence"
 
-        # ducking: fully ducked (-8 dB, 150 ms ramps) under the voice line at 9-11 s
-        ducked = rms_db(win(bed, 9.5, 10.3)) - rms_db(win(bed, 5.2, 5.9))
+        # ducking: fully ducked (-8 dB, 150 ms ramps) under the voice line at 9-11 s, measured above the voice's 190 Hz
+        ducked = rms_db(bandpass(win(mix, 9.5, 10.3), 1000, 8000)) - rms_db(bandpass(win(mix, 5.2, 5.9), 1000, 8000))
         assert abs(ducked + 8.0) <= 0.7, ducked
+        # music-only carries no voice, so nothing ducks it (it would swell in every gap between lines)
+        assert abs(rms_db(win(bed, 9.5, 10.3)) - rms_db(win(bed, 5.2, 5.9))) <= 0.7
 
         # voice is in the mix and not in the fallback
         assert rms_db(win(mix, 9.5, 10.3)) > rms_db(win(bed, 9.5, 10.3)) + 3

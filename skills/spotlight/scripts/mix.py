@@ -24,8 +24,8 @@ the 2-8 kHz lift is capped at 4 dB, the broadband peak at cap_db (default +6 dB)
 local bed peak, and a level floor keeps effects from vanishing over quiet passages. The
 solver is adapted from motion-video-kit's solve-sfx-gains.py and offline-mix.py (MIT,
 credited in NOTICE.md). music-only.wav is the same bed and clip audio without voice and
-effects: the fallback version, still ducked so it matches the full mix. Final loudness is
-left to footage.py encode (two-pass, -14 LUFS).
+effects, and not ducked: the version for adding other sound, or none. Final loudness is
+left to footage.py encode (-14 LUFS).
 
 Needs ffmpeg. Run it with `uv run mix.py mix.json`: uv reads the dependencies above and keeps their environment in
 its own cache, never next to this file (the skill folder may be read-only).
@@ -225,9 +225,10 @@ def mix(cfg, outdir):
                     region *= ramp[:f, None]
         if voice_lines:
             report.append(f"voice: {len(voice_lines)} lines, duck {DUCK_DB:+.1f} dB with {DUCK_RAMP * 1000:.0f} ms ramps")
+        # music-only is for adding other sound or no voice at all: ducking for lines it doesn't carry would pump
+        music_only = bed.copy()
         env = duck_envelope(n, [(t, len(s) / SR) for t, s in voice_lines])
         bed *= env[:, None]
-        music_only = bed.copy()
         mixdown = bed.copy()
         for i, (c, seg) in enumerate(clips):
             # gain_db is relative to the bed: -15 puts the live sound 15 dB under the music, however the phone recorded it
@@ -257,12 +258,9 @@ def mix(cfg, outdir):
             place(mixdown, s, t, gain)
             why, value = r["why"]
             lo, hi = r["band"]
-            if why == "floor":  # a lift ratio over an (near-)empty band reads as nonsense numbers
-                lift = f"{value:+.1f} dBFS (floor)"
-            elif r["in_band"] is not None:
-                lift = f"{r['in_band']:+.1f} dB ({why} {value:+.1f})"
-            else:
-                lift = f"n/a over a silent bed ({why} {value:+.1f})"
+            # every number is the effect's peak over the music's in the same 150 ms; only the floor is absolute
+            setby = f"floor {value:.1f} dBFS: the music is quiet here" if why == "floor" else f"{why} {value:+.1f} dB"
+            lift = (f"{r['in_band']:+.1f} dB" if r["in_band"] is not None else "n/a, the music is silent here") + f" ({setby})"
             line = (f"sfx {i + 1} {Path(e['file']).name} {where}  gain {r['gain_db']:+.1f} dB  "
                     f"in-band peak {lift}; {lo:.0f}-{hi:.0f} Hz, {BODY * 1000:.0f} ms body")
             if r["hf"] is not None:
@@ -275,7 +273,7 @@ def mix(cfg, outdir):
             if over > 1e-3:
                 report.append(f"voice {i + 1} @ {t:.2f}s runs {over:.2f}s past the end: trimmed")
             place(mixdown, samples, t)
-        report.append("music-only: bed + clips (no voice, no sfx)")
+        report.append("music-only: bed + clips (no voice, no sfx, not ducked)")
         sf.write(outdir / "mix.wav", mixdown, SR, subtype="FLOAT")
         sf.write(outdir / "music-only.wav", music_only, SR, subtype="FLOAT")
         (outdir / "mix-report.txt").write_text("\n".join(report) + "\n")
