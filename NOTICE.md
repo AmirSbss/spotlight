@@ -10,6 +10,9 @@
 | "Montage" by wipics ([OpenGameArt](https://opengameart.org/content/montage)): music, 17.47 to 42.47 s | `examples/demo/video.mp4` (audio only; the track itself isn't in the repo) | CC0 |
 | "Documentary Music - Small Signs of Change", music by Sascha Ende at ende.app (bundled as `assets/music/calm.mp3`): 11.84 to 71.84 s | `examples/explain/video.mp4` | CC BY 4.0 |
 | Piper voice `en_US-ljspeech-high`, trained on LJ Speech: narration | `examples/explain/video.mp4` | Public domain |
+| BudTech's website pages, photos and logo (budtech.om) | `examples/website/` | © BudTech LLC, the author's company, used with permission; not covered by spotlight's MIT licence |
+| "Happy Beats & Business Moves Vol. 1", music by Sascha Ende at ende.app (bundled as `assets/music/upbeat.mp3`), edited on bar lines | `examples/website/video.mp4` | CC BY 4.0 |
+| Inter and Noto Kufi Arabic (Google Fonts) | rendered into `examples/website/` | SIL OFL 1.1 |
 | Footage and logo of Mahoor Coffee (@mahoor_hills) | `examples/promo/` (video.mp4, video-fa.mp4, poster.jpg, preview.gif), and the café promo shown inside `examples/brag/` | © Mahoor Coffee, used with permission; not covered by spotlight's MIT licence |
 | "Sunday Morning Coffee", music by Sascha Ende at ende.app (bundled as `assets/music/warm.mp3`): 20.76 to 40.76 s | `examples/promo/video.mp4`, `examples/promo/video-fa.mp4` | CC BY 4.0 |
 | "Happy Beats & Business Moves Vol. 1", music by Sascha Ende at ende.app (bundled as `assets/music/upbeat.mp3`): 16.02 to 40.02 s | `examples/brag/video.mp4`, `examples/brag/video-square.mp4` | CC BY 4.0 |
