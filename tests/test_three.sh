@@ -35,6 +35,41 @@ ae=$($CMP -metric AE -fuzz 3% "$s/out/00000.jpg" "$s/out/00059.jpg" null: 2>&1 |
 read -r r g b <<< "$(px "$s/out/00030.jpg" 160 104)"; (( g > 200 && r < 80 )) || fail "anchored label not on its anchor ($r $g $b)"
 read -r r g b <<< "$(px "$s/out/00030.jpg" 160 128)"; (( g < 200 || r > 80 )) || fail "anchored label too big or too low"
 
+# routes: a globe with two routes. Accent pixels (points, routes) are absent before anything pops in, present after
+ROUTES='points: [ { id: "dxb", lat: 25.25, lon: 55.36, at: 0.2 }, { id: "lhr", lat: 51.47, lon: -0.45, at: 0.3 }, { id: "ika", lat: 35.42, lon: 51.15, at: 0.4 } ],
+  routes: [ { from: "dxb", to: "lhr", at: 0.8, dur: 1.4 }, { from: "dxb", to: "ika", at: 1.4, dur: 1.0 } ]'
+g="$t/routes"
+page "$g" "window.SPOTLIGHT = { width: 320, height: 568, duration: 3, grain: 0, shots: [ { a: 0, b: 3, three: \"three/routes.js\", params: { $ROUTES } } ] };"
+(cd "$g" && CAPTURE_WORKERS=1 node "$ROOT/skills/spotlight/scripts/capture.mjs" frames >/dev/null) || fail "routes capture failed"
+accent() { $IM "$1" -fx '(r>0.78 && g>0.55 && b<0.4) ? 1 : 0' -format '%[fx:int(mean*w*h)]' info:; }
+a0=$(accent "$g/out/00003.jpg"); a1=$(accent "$g/out/00087.jpg")
+(( a0 < 5 && a1 > 60 )) || fail "routes don't draw in (accent pixels $a0 at 0.1 s, $a1 at 2.9 s)"
+(cd "$g/out" && md5sum *.jpg) > "$t/routes.md5"
+(cd "$g" && CAPTURE_WORKERS=3 node "$ROOT/skills/spotlight/scripts/capture.mjs" frames >/dev/null)
+(cd "$g/out" && md5sum -c --quiet "$t/routes.md5") || fail "parallel routes capture changed pixels"
+# anchors: centred on London, London's label sits at the frame centre; centred on its antipode, it hides
+probe() {  # probe <dir> <t> <anchor id> -> "left top opacity" of that anchor's element after render(t)
+  (cd "$1" && node --input-type=module -e "
+    import { launch } from '$ROOT/skills/spotlight/scripts/browser.mjs';
+    import { pathToFileURL } from 'node:url';
+    const b = await launch(), p = await b.newPage({ viewport: { width: 320, height: 568 } });
+    await p.goto(pathToFileURL(process.cwd() + '/scene.html').href); await p.evaluate(() => window.ready);
+    console.log(await p.evaluate(async ([t, id]) => { await window.render(t); const s = document.querySelector('[data-anchor=' + id + ']').style;
+      return [parseFloat(s.left), parseFloat(s.top), +s.opacity].join(' '); }, [$2, '$3']));
+    await b.close();")
+}
+for c in "51.47, -0.45" "-51.47, 179.55"; do
+  d="$t/anchor$RANDOM"
+  page "$d" "window.SPOTLIGHT = { width: 320, height: 568, duration: 3, grain: 0, shots: [ { a: 0, b: 3, three: \"three/routes.js\", params: { $ROUTES, center: { from: [$c], to: [$c] } } } ] };" \
+    '<div data-anchor="lhr"></div>'
+  read -r x y o <<< "$(probe "$d" 1.5 lhr)"
+  if [[ $c == 51* ]]; then
+    python3 -c "import sys; sys.exit(not (abs($x - 160) < 2 and abs($y - 284) < 2 and $o > 0.95))" || fail "London's anchor at $x,$y ($o), want 160,284"
+  else
+    python3 -c "import sys; sys.exit(not ($o < 0.01))" || fail "London's label shows ($o) with London on the far side"
+  fi
+done
+
 # a bad module path is a loud error naming the path
 x="$t/bad"
 page "$x" 'window.SPOTLIGHT = { width: 320, height: 568, duration: 1, shots: [ { a: 0, b: 1, three: "three/nope.js" } ] };'
