@@ -47,6 +47,8 @@ BED_LUFS = -23.0          # where the music sits before encode lifts the whole m
 DUCK_DB, DUCK_RAMP = -8.0, 0.15
 TARGET_DB, CAP_DB = 3.5, 6.0
 HF_BAND, HF_LIFT_CAP = (2000.0, 8000.0), 4.0
+TOP_DB = 0.0              # an effect never peaks over the music's loudest moment: encode sets the music's loudness,
+                          # so the music's top already sits at its true-peak ceiling and anything louder gets crushed
 FLOOR_DBFS = -26.0        # an effect never lands below this in its own band, however quiet the bed
 FLOOR_UNDER_PEAK = -12.0  # ... nor 12 dB under the bed's broadband peak: a band the music leaves empty
 BODY = 0.15               # the window an effect is judged in
@@ -104,10 +106,12 @@ def band(x, lo, hi):
 
 
 def own_band(x):
-    # the octave around the spectral centroid: where this effect actually lives
-    spec = np.abs(np.fft.rfft(x[:, 0])) + 1e-12
+    # the octave around the energy centroid: where this effect actually lives. Weighting by magnitude instead let a
+    # whoosh's faint hiss (spread over every bin) pull its band to 1.1-4.4 kHz, where it has almost no energy (its body
+    # is 150-1100 Hz), so the solver saw it as quiet and lifted it far too much
+    power = np.abs(np.fft.rfft(x[:, 0])) ** 2 + 1e-24
     freqs = np.fft.rfftfreq(len(x), 1 / SR)
-    c = float((freqs * spec).sum() / spec.sum())
+    c = float((freqs * power).sum() / power.sum())
     return c / 2, c * 2
 
 
@@ -134,7 +138,7 @@ def lift_db(a, b):
     return float(20 * np.log10(max(a, 1e-12) / max(b, 1e-12)))
 
 
-def solve_sfx(sfx, t, bed, target_db, cap_db):
+def solve_sfx(sfx, t, bed, target_db, cap_db, top):
     # gain so this effect's in-band peak sits target_db over the bed in the same 150 ms body,
     # then through the HF cap, the peak cap and the floor, whichever binds first (lowest gain)
     i0, i1 = round(t * SR), min(round((t + BODY) * SR), len(bed))
@@ -165,6 +169,10 @@ def solve_sfx(sfx, t, bed, target_db, cap_db):
     floor = floor_level / sfx_band
     if floor > gain:
         gain, why = floor, ("floor", lift_db(floor_level, 1.0))
+    # last and over everything, the floor included: no peak over the music's loudest moment (whoosh-2 floored to +9.6 dB
+    # over the music came out of encode's limiter crushed by about as much)
+    if top > 1e-6 and sfx_peak * gain > top * 10 ** (TOP_DB / 20):
+        gain, why = top * 10 ** (TOP_DB / 20) / sfx_peak, ("music's top", TOP_DB)
     report = {"gain_db": lift_db(gain, 1.0), "band": (lo, hi), "why": why,
               "in_band": lift_db(sfx_band * gain, bed_band) if bed_band > 1e-6 else None}
     report["hf"] = lift_db(sfx_hf * gain, bed_hf) if bed_hf > 1e-9 else None
@@ -243,6 +251,7 @@ def mix(cfg, outdir):
             place(mixdown, seg, float(c["t"]), 10 ** (g / 20))
             report.append(f"clip {i + 1} {Path(c['file']).name} @ {float(c['t']):.2f}s -> {target:.1f} LUFS ({g:+.1f} dB)")
         report.append(f"clips: {len(cfg.get('clips') or [])} live-audio event(s)")
+        top = float(np.max(np.abs(mixdown))) if n else 0.0  # the music's (and live sound's) loudest moment
         for i, e in enumerate(cfg.get("sfx") or []):
             s = decode(src(e["file"]), tmp, f"sfx{i}")
             t = at = float(e["t"])
@@ -251,7 +260,7 @@ def mix(cfg, outdir):
             where = f"@ {t:.2f}s" + (f" (peak on {at:.2f}s)" if e.get("align") == "peak" else "")
             try:
                 gain, r = solve_sfx(s, t, mixdown, float(e.get("target_db") or TARGET_DB),
-                                    float(e.get("cap_db") or CAP_DB))
+                                    float(e.get("cap_db") or CAP_DB), top)
             except RuntimeError as err:  # one bad effect never costs the whole mix
                 report.append(f"sfx {i + 1} {Path(e['file']).name} {where}  skipped: {err}")
                 continue

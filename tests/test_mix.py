@@ -82,6 +82,19 @@ def edges(d):
     peak_at = (np.argmax(np.abs((full - bed)[:, 0])) / SR)
     assert abs(peak_at - 5.0) < 0.03, peak_at
 
+    # the solver: whatever lifts an effect (the floor over a near-silent stretch included), it never peaks over the
+    # music's loudest moment. encode sets the music at its true-peak ceiling, so a louder effect gets crushed
+    from mix import solve_sfx, own_band
+    thump, _ = sf.read(d / "thump.wav", always_2d=True, dtype="float32")
+    hush = np.full((SR, 2), 1e-4, dtype=np.float32)
+    gain, rep = solve_sfx(thump, 0.2, hush, 12.0, 6.0, top=0.01)
+    assert np.max(np.abs(thump)) * gain <= 0.01 * 1.001 and rep["why"][0] == "music's top", (gain, rep)
+    # and an effect is measured where its energy is: a 300 Hz thump with a faint broadband hiss stays in its octave
+    rng = np.random.default_rng(1)
+    hissy = (thump + 0.01 * rng.standard_normal(thump.shape)).astype(np.float32)
+    lo, hi = own_band(hissy)
+    assert lo < 300 < hi, (lo, hi)
+
     # no music, no duration: the length covers the whole clip and the whole voice line, plus 0.5 s
     (w / "mix.json").write_text(json.dumps({
         "clips": [{"file": "clip.wav", "t": 0.5, "gain_db": -6}],

@@ -74,7 +74,7 @@ Measured shapes (track time). Start the window where the music already moves, un
 
 Put each effect's `t` on the frame where the action happens (`frame / 30`). Whooshes swell to their peak 0.3–0.4 s in, so give every whoosh `"align": "peak"`: its loudest moment then lands on `t` (put `t` on the cut). Clicks, pops and chimes start on their hit, so leave them at the default.
 
-`mix.py` sets every gain itself. In the effect's own frequency band, its peak sits `target_db` (+3.5 dB) over the music's peak in the same 150 ms, within caps: at most +4 dB in the 2–8 kHz band, and a broadband peak at most `cap_db` (+6 dB) over the music's. Over a quiet passage a `floor` lifts it to a level that stays audible, which can exceed those caps. The defaults are deliberately subtle: they sit with the music, the way a polished video sounds. For an effect that must punch (a `chaotic` tone, a big reveal), set its `"target_db": 6` (up to 9) and, if the report then says `peak cap`, `"cap_db": 9`.
+`mix.py` sets every gain itself. In the effect's own frequency band, its peak sits `target_db` (+3.5 dB) over the music's peak in the same 150 ms, within caps: at most +4 dB in the 2–8 kHz band, and a broadband peak at most `cap_db` (+6 dB) over the music's. Over a quiet passage a `floor` lifts it to a level that stays audible, which can exceed those caps. But no effect ever peaks over the music's loudest moment (`music's top`): encode sets the music's loudness, so the music's top already sits at the true-peak ceiling, and anything louder would come out of encode's limiter crushed. The defaults are deliberately subtle: they sit with the music, the way a polished video sounds. For an effect that must punch (a `chaotic` tone, a big reveal), set its `"target_db": 6` (up to 9) and, if the report then says `peak cap`, `"cap_db": 9`.
 
 ## Live sound from clips
 
@@ -124,7 +124,7 @@ Paths are relative to `mix.json` (so `voice/s1.wav` works) or absolute (bundled 
 - there is no `music runs out` line;
 - no voice line `runs past the end`.
 
-An effect's line reads `gain -16.2 dB  in-band peak +9.6 dB (floor -22.0 dBFS: the music is quiet here); 2729-10917 Hz, 150 ms body  hf +7.3 dB  peak -9.2 dB`. Every dB after the gain compares the effect's peak with the music's in the same 150 ms: in the effect's own band (`in-band peak`), in 2–8 kHz (`hf`) and across all frequencies (`peak`). The bracket says what set the gain: `target`, `hf cap`, `peak cap`, or `floor`, a fixed level in dBFS that takes over where the music is quiet in that band (under narration, or in a calm track). Effects at `floor` are normal and audible, and their numbers over the music run high because the music is quiet there.
+An effect's line reads `gain -16.2 dB  in-band peak +9.6 dB (floor -22.0 dBFS: the music is quiet here); 2729-10917 Hz, 150 ms body  hf +7.3 dB  peak -9.2 dB`. Every dB after the gain compares the effect's peak with the music's in the same 150 ms: in the effect's own band (`in-band peak`), in 2–8 kHz (`hf`) and across all frequencies (`peak`). The bracket says what set the gain: `target`, `hf cap`, `peak cap`, `music's top`, or `floor`, a fixed level in dBFS that takes over where the music is quiet in that band (under narration, or in a calm track). Effects at `floor` are normal and audible, and their numbers over the music run high because the music is quiet there.
 
 ## Deliver
 
