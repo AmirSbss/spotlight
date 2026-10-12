@@ -170,6 +170,11 @@ done
 q="$t/chart320x568"; (cd "$q" && CAPTURE_WORKERS=1 node "$ROOT/skills/spotlight/scripts/capture.mjs" frames >/dev/null && (cd out && md5sum *.jpg) > serial.md5 \
   && CAPTURE_WORKERS=4 node "$ROOT/skills/spotlight/scripts/capture.mjs" frames >/dev/null && (cd out && md5sum -c --quiet ../serial.md5)) \
   || { echo "FAIL: parallel capture changed chart pixels"; exit 1; }
+# a negative bar can't be drawn as a size: the capture stops and says why, instead of drawing nothing
+ng="$t/negbar"; mkdir -p "$ng"; cp "$q/scene.html" "$q/kit.js" "$q/fonts.css" "$q/timeline.js" "$q/bg.png" "$ng/"; ln -s "$t/node_modules" "$ng/node_modules"
+sed -i "s/data-values='\[10, 20, \"40\"\]'/data-values='[10, \"-1.5 LU\"]'/" "$ng/scene.html"
+set +e; out=$(cd "$ng" && node "$ROOT/skills/spotlight/scripts/capture.mjs" stills 0.5 2>&1); rc=$?; set -e
+[[ $rc != 0 ]] && grep -q "can't show -1.5 LU" <<< "$out" || { echo "FAIL: negative bar: exit $rc: $out"; exit 1; }
 # diagrams: a path draws in from its data-at over data-dur (hidden before, partly drawn mid-way, whole after);
 # other diagram elements fade in like caption lines; parallel capture changes no pixel of a drawing line (a donut's
 # changing stroke-dasharray once kept stale pixels from whichever frame a worker drew before)
