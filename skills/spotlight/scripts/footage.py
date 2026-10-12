@@ -193,8 +193,9 @@ AAC = ["-c:a", "aac", "-b:a", "192k"]
 
 
 def limiter(ceiling):
-    # 4x oversampled, so it also catches the peaks between samples; no auto-level, no delay
-    return (f"aresample=192000,alimiter=limit={10 ** (ceiling / 20):.4f}:attack=1:release=60:level=false:latency=true,"
+    # 4x oversampled, so it also catches the peaks between samples; no auto-level, no delay. A 10 ms look-ahead
+    # turns a peak down more smoothly: a pop limited by 3.4 dB measured -36 dB of distortion at 1 ms, -40 dB at 10 ms
+    return (f"aresample=192000,alimiter=limit={10 ** (ceiling / 20):.4f}:attack=10:release=120:level=false:latency=true,"
             "aresample=48000,aformat=sample_rates=48000:channel_layouts=stereo")
 
 
