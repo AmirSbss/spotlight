@@ -1,49 +1,55 @@
 # Sources: every line of on-screen text and every number
 
-Repo paths are relative to the spotlight repo (github.com/AmirSbss/spotlight). `notes.md` is `showcase/notes.md`. `cafe/` is the Mahoor Coffee promo's output folder (`cafe/spotlight-output/` and `cafe/spotlight-output-fa/`).
+Repo paths are relative to the spotlight repo (github.com/AmirSbss/spotlight). `budtech/` and `cafe/` are the two source videos' output folders.
 
 ## Our captions and card labels
 | Time | On screen | Source |
 |---|---|---|
-| 0–4.0 | "spotlight · a skill for AI coding agents" | `README.md` line 9: "spotlight is a skill for AI coding agents"; the promo is a spotlight run (`cafe/spotlight-output/plan.md`; the coordinator's brief: "a 20 s vertical promo spotlight made for Mahoor Coffee") |
-| 0–4.0 | "A café promo from 12 phone clips and a logo." | `cafe/spotlight-output/sources.md`: "Inputs: twelve phone clips from the café (video_*.mov) and the logo (mahoor-logo.jpg), both from the owner"; `cafe/work/manifest.jsonl` lists 12 clips. (The promo uses five of them; "from" names its inputs.) |
-| 0–7.0 | card bar "Mahoor Coffee", tags "Promo · 20 s", "English", "Persian" | the café's name (cafe `sources.md`, the owner's brief); its length (20.0 s, ffprobe); the two cuts (`cafe/spotlight-output/` English, `cafe/spotlight-output-fa/` Persian) |
-| 4.0–7.0 | "The same timeline" / "…and a Persian cut." | `cafe/spotlight-output/plan.md`: "Persian cut: the same frames and mix, with captions in Persian (Vazirmatn) running right to left" |
-| 4.0–7.0 | "Right to left, letters joined." | `cafe/spotlight-output/plan.md` ("running right to left"); `README.md`: "Persian or Arabic letters stay joined and run right to left"; cafe `work/critic-3.md`: "The text is still right-aligned and joined" |
-| 7.0–13.0 | "Data in, explainer out" | chapter card standing for notes.md: Codex "made this 25 s narrated explainer … from two small CSV files" |
-| 7.0–13.0 | "Same prompt, same sample data." | notes.md: Hermes "did the same from the same prompt and data", "two small CSV files of SAMPLE data"; `docs/other-agents.md`: "from the same headless prompt and the same two small CSV files" |
-| 7.5–13.0 | "Codex CLI, about 12 minutes" | notes.md: "It took about 12 minutes"; `docs/other-agents.md`: "full pipeline in about 12 minutes" |
-| 10.1–13.0 | "Hermes Agent, about 27 minutes" | notes.md: "in about 27 minutes"; `docs/other-agents.md`: "full pipeline in about 27 minutes" |
-| 7.0–13.0 | card bars "codex-sample-explainer.mp4", "hermes-sample-explainer.mp4", tag "Sample data · fictional courier" | the file names in `showcase/`; notes.md: "SAMPLE data about a fictional courier ('Northwind Parcels')" |
-| 13.0–19.5 | card bar "explain-why-spotlight-checks-its-own-videos.mp4" · "60 s · explainer" | the file name; notes.md: "a 60 s narrated explainer" |
-| 13.0–19.5 | "Before you see it" | `README.md` intro: "has a second agent critique it before you see it" |
-| 13.0–19.5 | "spotlight measures every render." | `README.md`: "measures the result"; the explainer's own section title "It measures every render" (`examples/explain/sources.md`) |
-| 13.0–19.5 | "Then a critic reviews it, up to three rounds." | `README.md` "How it works": "… This goes on for up to three rounds."; `docs/other-agents.md`: "Every run went through `footage.py check` and a critic review" |
-| 19.5–24 | "spotlight." | the project's name (`skills/spotlight/SKILL.md`) |
-| 19.5–24 | "Finished short videos from your AI coding agent." | `README.md` line 3: "Point your AI agent at a website, some footage or a topic, and get back a finished short video."; line 9: "spotlight is a skill for AI coding agents" |
-| 19.5–24 | "github.com/AmirSbss/spotlight" | the repo URL (`README.md` install lines) |
-| 19.5–24 | "Tested on Claude Code, Codex CLI and Hermes Agent" | `README.md` Install: "It has been tested end to end on Claude Code, Codex CLI and Hermes Agent." |
+| 0–3.0 | "spotlight · videos made by your AI agent" | `README.md` line 1: "spotlight: short videos made by your AI coding agent" |
+| 0–3.0 | "A website and phone clips in. Finished videos out." | the two videos' inputs: BudTech from the live website (`budtech/spotlight-output/sources.md`: "captured from the live site … https://budtech.om/en/ … and https://budtech.om/ar/"); Mahoor Coffee from phone clips (`cafe/spotlight-output/sources.md`: "twelve phone clips from the café"); `README.md` line 3: "turns a website, a folder of phone clips or a spreadsheet into a finished short video" |
+| 0–8.0 | card bar "BudTech" · "Launch video" / "Launch video · 20 s" | the site name (`budtech/…/sources.md`: og:site_name); `budtech/…/plan.md`: "brag", 20.0 s (ffprobe) |
+| 0–14.0 | card bar "Mahoor Coffee" · "Promo", "Promo · 20 s", "English", "Persian" | the café's name (`cafe/…/sources.md`, the owner's brief); its length (20.0 s, ffprobe); the two cuts (`cafe/spotlight-output/`, `cafe/spotlight-output-fa/`) |
+| 3.0–8.0 | "1 · A launch video" | the BudTech video is a brag (launch) video (`budtech/…/plan.md`); `README.md` line 15: "BudTech launch video … the live website budtech.om … brag, vertical, 20 s" |
+| 3.0–8.0 | "Built from the live site, budtech.om." | `budtech/…/sources.md`: "All captured from the live site on 2026-10-12: https://budtech.om/en/ … and https://budtech.om/ar/"; its photos "downloaded from https://media.budtech.om/ (the site's own media)" |
+| 3.0–8.0 | "Switched to Arabic through its own menu." | `budtech/…/plan.md` shots 3–5: "the language picker is tapped, 'العربية' is chosen, and the page flips to Arabic"; `sources.md`: the menu captured "after a real click on the picker" |
+| 8.0–11.0 | "2 · A café promo" | `cafe/…/plan.md` ("promo"); `README.md` line 16: "Mahoor Coffee promo … twelve phone clips and a logo … promo, vertical, 20 s" |
+| 8.0–11.0 | "From 12 phone clips and a logo." | `cafe/spotlight-output/sources.md`: "Inputs: twelve phone clips from the café (video_*.mov) and the logo (mahoor-logo.jpg), both from the owner"; `cafe/work/manifest.jsonl` lists 12 clips |
+| 11.0–14.0 | "The same timeline" / "…and a Persian cut." | `cafe/spotlight-output/plan.md`: "Persian cut: the same frames and mix, with captions in Persian (Vazirmatn) running right to left" |
+| 11.0–14.0 | "Right to left, letters joined." | `cafe/…/plan.md` ("running right to left"); `README.md` line 3: "captions in your language (Arabic and Persian included)"; `skills/spotlight/SKILL.md` ("Text in any language": Persian runs right to left, joined scripts animate by word so letters stay joined) |
+| 14.0–18.5 | card bar "explain-why-spotlight-checks-its-own-videos.mp4" · "60 s explainer" | the file in `showcase/`; `showcase/notes.md`: "a 60 s narrated explainer" |
+| 14.0–18.5 | "Before you see it" | `README.md` line 3: "Every one is measured and reviewed by a second AI agent before you see it." |
+| 14.0–18.5 | "Measured, then reviewed by a second AI agent." | `README.md` line 3 (above); line 108: "Twice over: once by measurement, once by a critic." |
+| 14.0–18.5 | "Up to three rounds." | `README.md` line 111: "This runs for up to three rounds." |
+| 18.5–23 | "spotlight." | the project's name (`skills/spotlight/SKILL.md`) |
+| 18.5–23 | "Finished short videos from your AI coding agent." | `README.md` line 1 ("short videos made by your AI coding agent") and line 3 ("a finished short video") |
+| 18.5–23 | "Free and open source" | `README.md` line 3: "spotlight is a free, open-source Agent Skill" |
+| 18.5–23 | "github.com/AmirSbss/spotlight" | the repo URL (`README.md` install lines) |
+| 18.5–23 | "Tested on Claude Code, Codex CLI and Hermes Agent" | `README.md` line 117: "Codex CLI and Hermes Agent were each tested end to end … and Claude Code made every example here."; `docs/other-agents.md` "Which agents were tested?" table (Claude Code, Codex CLI, Hermes Agent) |
 
-## Text burned into the source clips (inside the cards, never captioned over)
+## Text burned into the source videos (inside the cards, never captioned over or quoted)
 | Card | Window (source s) | Burned-in text | Source |
 |---|---|---|---|
-| Café, English | 0.0–4.0 and 4.5–7.5 (shown at 0–4.0 and 4.0–7.0) | "MAHOOR COFFEE", "Some days need a good coffee.", then "Today is one of them." (the café's own mood lines; this video never quotes them) | `cafe/spotlight-output/video.mp4` (re-captioned at the owner's request); traced in `cafe/spotlight-output/sources.md` |
-| Café, Persian | 4.5–7.5 (shown at 4.0–7.0) | «امروز از همون روزاست.» | `cafe/spotlight-output-fa/video.mp4`; `cafe/spotlight-output/sources.md` (Persian cut table) |
-| Codex | 4.0–7.0, cropped to the chart panel | "01 · 2025 parcels by hub", "12,400", "9,850", "6,320", "Dubai", "London", "Toronto", "Source: hubs.csv" | `showcase/codex-sample-explainer.mp4`; fictional sample data (notes.md) |
-| Hermes | 7.6–10.6 | "Connecting routes · routes.csv", "Inter-Hub Transit Flows", "4,100 parcels DXB → LHR · 2,750 parcels LHR → YYZ", "Toronto (YYZ)", "London (LHR)", "Dubai (DXB)" | `showcase/hermes-sample-explainer.mp4`; fictional sample data (notes.md) |
-| Loop | 40.2–42.6 + 43.5–47.6, cropped to the diagram and darkened | "Render", "Measure", "Fresh critic", "Fix", "3 rounds max", "SHIP" | `showcase/explain-why-spotlight-checks-its-own-videos.mp4` (= `examples/explain/video.mp4`), loop diagram only |
+| BudTech | 0.0–5.5, then its end card 16.4–18.9 (shown at 0–5.5 and 5.5–8.0) | "BudTech · Muscat, Oman", "From IT infrastructure", "to custom software"; the live site's own page (EN H1 "BudTech, your technology partner in Oman and the GCC", its hero paragraph, "Request a quote", the menu "English / العربية", the AR H1 and button); its end card: logo, "BudTech", "براعم التقنية", "Request a quote" (tapped at source 17.6 = our 6.7), "budtech.om", "Muscat, Oman" | `budtech/spotlight-output/video.mp4`; traced in `budtech/spotlight-output/sources.md` |
+| Mahoor Coffee (hook) | 0.0–3.0 | "MAHOOR COFFEE", "Some days need a good coffee." | `cafe/spotlight-output/video.mp4`; `cafe/…/sources.md` (the café's own mood lines) |
+| Mahoor Coffee | 4.5–7.5, 10.0–13.0 | "Today is one of them.", "Better with a friend." | the same |
+| Mahoor Coffee, Persian | 10.0–13.0 | «با رفیق، بهتره.» | `cafe/spotlight-output-fa/video.mp4`; `cafe/…/sources.md` (Persian cut table) |
+| Loop | 43.5–48.0, cropped to the diagram, darkened | "Render", "Measure", "Fresh critic", "Fix", "3 rounds max", "SHIP" | `showcase/explain-why-spotlight-checks-its-own-videos.mp4` (= `examples/explain/video.mp4`) |
 
 ## Numbers on screen
-12 (clips): cafe `sources.md` and manifest. 20 s (the promo's length): the file. 12 and 27 (minutes): notes.md, `docs/other-agents.md`. "two" (CSV files, agents): notes.md. "three rounds": `README.md`. Inside the cards only: the fictional sample values above; "3 rounds max" from the explainer.
+12 (clips): `cafe/…/sources.md`, manifest, `README.md` line 16. 20 s (both videos' length): ffprobe (20.0 s each). "three rounds": `README.md` line 111. 60 s: ffprobe (60.0 s), `showcase/notes.md`.
 
 ## People and permission
-The café footage in the windows used shows a barista's arm and gloved hands and the café's wall art (a painted face on a screen); no customer faces. The owner approved publishing the promo, faces included (the coordinator's brief). Mahoor Coffee appears only as their own promo, never as a customer or endorsement.
+- BudTech: a man at his screens, from the back (the site's own photo, 1.5–3.0). The owner's own company and site.
+- Mahoor Coffee: in the hook (0–3.0) a barista's arm and the café's wall art (a painted face on a screen); at 8–11 a gloved hand pouring; at 11–14 a customer's hands and arm at the counter. The owner approved publishing the promo, faces included (the coordinator's brief).
+- Both businesses appear only as their own videos, never as customers or endorsements of spotlight.
 
 ## Music and effects
-`skills/spotlight/assets/music/upbeat.mp3`: "Happy Beats & Business Moves Vol. 1", music by Sascha Ende at ende.app, CC BY 4.0 (`assets/music/LICENSES.md`), track 16.02–40.02 s. Effects (CC0): `assets/sfx/whoosh-1.ogg`, `whoosh-2.ogg`, `whoosh-3.ogg`, `chime-2.ogg`. The café promo's own sound is not used.
+- Music: `skills/spotlight/assets/music/upbeat-rock.mp3`, "The Show Begins Vol. 8" by Sascha Ende (https://ende.app/en/song/12952-the-show-begins-vol-8), CC BY 4.0 (`assets/music/LICENSES.md`), track 5.0–28.0 s. **Music by Sascha Ende at ende.app.**
+- Effects: `assets/sfx/whoosh-2.ogg`, `whoosh-3.ogg`, `click-2.ogg`, `toggle-1.ogg`, `chime-2.ogg` (bundled, `assets/sfx/LICENSES.md`).
+- The source videos' own audio is not used.
 
 ## Fonts
-Space Grotesk, Inter, JetBrains Mono (SIL OFL), from Google Fonts. The Persian text is the Persian cut's own pixels (Vazirmatn, per cafe `plan.md`).
+Space Grotesk, Inter, JetBrains Mono (SIL OFL), from Google Fonts. The Arabic and Persian text is the source videos' own pixels.
 
 ## AI ledger
 | File | Prompt | Purpose | Shot |

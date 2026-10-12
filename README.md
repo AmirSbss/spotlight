@@ -2,9 +2,9 @@
 
 **spotlight is a free, open-source Agent Skill that turns a website, a folder of phone clips or a spreadsheet into a finished short video. You get a launch video, a promo reel or a narrated explainer, made by Claude Code, Codex CLI, Hermes Agent or any AI agent that reads `SKILL.md`.** Each video comes with music, captions in your language (Arabic and Persian included), a poster and a caption ready to post. Every one is measured and reviewed by a second AI agent before you see it.
 
-[![spotlight's launch video: a café promo, its Persian cut, explainers with a chart and a globe, and the check loop, all made with spotlight](examples/brag/preview.gif)](examples/brag/video.mp4)
+[![spotlight's launch video: a website turned into a launch video and phone clips turned into a café promo, both made with spotlight](examples/brag/preview.gif)](examples/brag/video.mp4)
 
-*Every clip in this video was made with spotlight, and so was the video itself. [Watch it with sound](examples/brag/video.mp4), or see [the square cut for LinkedIn](examples/brag/video-square.mp4).*
+*A website and a folder of phone clips in, finished videos out: BudTech's launch video and Mahoor Coffee's promo, both made with spotlight. So was this video. [Watch it with sound](examples/brag/video.mp4), or see [the square cut for LinkedIn](examples/brag/video-square.mp4).*
 
 [![spotlight on AI Agents Listing](https://aiagentslisting.com/spotlight/badge.svg?claim=bfc5ca4a2e45ea7bb00e84ae5aa10e9a)](https://aiagentslisting.com/mcp/spotlight)
 
@@ -15,7 +15,7 @@
 | [BudTech launch video](examples/website/video.mp4) | the live website budtech.om | brag, vertical, 20 s |
 | [Mahoor Coffee promo](examples/promo/video.mp4) ([Persian cut](examples/promo/video-fa.mp4)) | twelve phone clips and a logo | promo, vertical, 20 s |
 | [Why spotlight checks its own videos](examples/explain/video.mp4) | check results and a critic report | explain, landscape, 60 s, narrated |
-| [spotlight's own launch video](examples/brag/video.mp4) ([square](examples/brag/video-square.mp4)) | the other examples | brag, landscape and square, 24 s |
+| [spotlight's own launch video](examples/brag/video.mp4) ([square](examples/brag/video-square.mp4)) | the BudTech and Mahoor Coffee videos | brag, landscape and square, 23 s |
 
 Each folder holds the video, its poster, the plan, `sources.md` (where every line on screen came from) and the critic's reports.
 

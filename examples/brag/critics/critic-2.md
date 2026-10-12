@@ -1,146 +1,91 @@
-# Critic 2: spotlight launch v2 (square reel + landscape)
+# Critic 2: spotlight brag (square primary + landscape)
 
-**Method:**
-- Pulled all 720 frames of both files. Built 0.25 s sheets and every-frame strips at 3.73–4.73, 6.77–7.23, 9.77–10.23, 12.77–13.23, 19.27–20.07 and 20.77–21.23.
-- Checked the loop card for leftover explainer text by raising its brightness 4× and 10×.
-- Measured cap heights for the phone-size check.
-- Ran a frame-to-frame difference scan for one-frame flashes.
-- Measured 10 ms RMS of the mix against music-only: across the whole range, and within each effect's frequency band.
-- Files are in `v2critic2/`.
+The evidence is in `brag/r2critic2/`:
+- every frame of both renders (`sq/`, `ls/`);
+- 0.25 s sheets (`sheet-{sq,ls}-*.jpg`);
+- every frame around each transition (`tr-t1…t7-{sq,ls}.jpg`);
+- native crops (`c-*.png`, `n-*.png`) and a phone-size strip (`phone390.png`);
+- per-frame luma (`yavg-*.txt`) and the audio null tables (`null-table.txt`, `wavnull.txt`, `musnull.txt`).
 
-Both `video.mp4` files have the same audio (same MD5). All five landscape every-frame strips match the square's timing.
+## 1. Round-1 items
 
-The two `music-only.mp4` files decode to different MD5s, but they carry the same bed:
-- their overall RMS is −16.87 and −16.96 dB;
-- the difference between them is at least 21 dB under the music (−35 to −48 dB, following the bed);
-- they were muxed separately, at 11:04 for v2 and 11:06 for the reel.
+### Gating
+1. **Square kickers wrap: FIXED.**
+   - "1 · A LAUNCH VIDEO" runs 3.23–8.0 and "2 · A CAFÉ PROMO" runs 8.03–11.0. Each is one line in both renders, and neither repeats the body line.
+2. **sources.md re-cite: FIXED.**
+   - The README lines it cites now match the current README: 1, 3, 15, 16, 108, 111, 117.
+   - Its other citations hold too:
+     - `docs/other-agents.md` "Which agents were tested?" (line 55);
+     - `budtech/…/plan.md` line 3, "the language picker is tapped…";
+     - `cafe/…/plan.md` line 34, "the same frames and mix, with captions in Persian…";
+     - SKILL.md "### Text in any language" (line 64) and its "by word" rule (line 70);
+     - the budtech sources lines (3, 15, 21, 37).
+   - ffprobe gives 20.0 s for all three source videos and 60.0 s for the explainer. The manifest lists 12 clips.
+   - The People section now covers the hook's arm and wall art, the gloved hand (8–11) and the hands at the counter (11–14).
 
-This is not a defect.
+### Optional
+3. **Loop.**
+   - Inset: **FIXED.** At 16.0 the square card sits about 70 px in from each side.
+   - Backdrop: **STILL PRESENT.** `BACK` is still `brightness(.32)`. Mean luma is 32 in the square and 29 in landscape for 14–18.5 (30 in round 1), and 43/37 on the end card. The last 9 s are still the darkest 40% of the video.
+   - Caption: **PARTLY.** "Before you see it / Measured, then reviewed by a second AI agent." now carries README line 3. "Up to three rounds." still restates the diagram's "3 rounds max".
+4. **End card "Free and open source": FIXED.** It is visible from 19.23 and full by 19.43.
+5. **Hook tags: STILL PRESENT.** Only the case changed ("Launch video", "Promo"). They are about 20 px pills, about 7 px at 390 px phone width (`phone390.png`), and can't be read muted.
+6. **Website end and timing.**
+   - BudTech's own end card at 5.5–8.0: **FIXED.** It shows its logo, "Request a quote" (the press ring first appears at 6.700 and the click is at 6.70) and budtech.om. That is its own video, so the rules allow it.
+   - Earlier captions: **PARTLY.** Critic 1 asked for 3.05 and 11.05.
+     - Website: the kicker first shows at 3.233 and the body at 3.333.
+     - Persian: the kicker first shows at 11.133 and the body at 11.233.
+     - The caption-free stretches are now about 0.23 s and 0.13 s.
+   - "spotlight." at 18.8: **FIXED.** It first shows at 18.833.
+   - Empty navy: **FIXED.** It has shrunk from 18.77–18.93 to two frames, 18.767–18.800.
 
-## 1. Round-1 top changes
-
-| # | Round-1 ask | Status | Evidence |
-|---|---|---|---|
-| 1 | Hook says what spotlight is | **FIXED** | From frame 0 to 3.8 s an amber kicker reads "spotlight · a skill for AI coding agents". Its cap height is 26 px, about 9 px on a 375 px phone. It fades out from 3.80 to 4.00. |
-| 2 | Sample label readable; caption "same sample data" | **FIXED** | The amber tag "SAMPLE DATA · FICTIONAL COURIER" shows on both cards, Codex 7.0–10.0 and Hermes 10.0–13.0. Its cap height is 20 px, about 7 px on a phone; round 1 measured about 5. The caption reads "Same prompt, same sample data." |
-| 3 | Darken the explainer's ghost text; move the crop down | **FIXED** | At normal brightness the card is black around the diagram in both formats (f405, f470, f560). At 10× there are dots of at most 5/255 left of "Fix", and a sliver of at most 13/255 on rows 258–262 at the crop's top edge (square). Neither is visible in normal viewing. The "claude plugin install…" and "npx skills add…" lines are gone. |
-| 4 | Fix 4.0–4.5 | **PARTLY** | See the breakdown below this table. |
-| 5 | Loop layout and wording | **FIXED** | Square: the card is 1040 wide (x 20–1060). The gap from card to kicker is about 62 px, and the card and caption block runs from y 205 to 780. Landscape: the card is about 1520 wide. The line reads "spotlight measures every render." |
-| 6 | Framing | **FIXED** | See the breakdown below this table. |
-
-**Item 4, 4.0–4.5:**
-- Fixed:
-  - The tag swaps mid-move (f122, 4.07).
-  - The Persian card ghosts for only 2 frames while it slides (f125 at about 17%, f126 at 50%). It is opaque by f128 (4.27).
-  - The pair lines up: both cards are 360 wide with their tops at y 87 (f150).
-- Still present:
-  - **No text from f120 to f129 (4.00–4.30).** The kicker only starts at f130 (4.33) and the headline becomes legible around f134 (4.47). Round 1 asked for 4.05.
-  - **The café promo's own cut still lands at f134→f135 (4.50).** That is 50 ms after the Persian slide settles (4.45) and on the frame the headline arrives. Move, slide and hard cut happen within 0.5 s. This is the largest frame difference in 0–7 s outside our own cuts (27.4).
-
-**Item 6, framing:**
-- Codex now starts on the cropped chart panel with the bars growing. The grey table is gone.
-- Hermes has a 62 px gap (card bottom 698, kicker 760).
-- The landscape pair is 2 × about 450 wide (x 840–1760).
-
-**Round-1 blocking defects:**
-- The sample label unreadable on a phone: **FIXED** (row 2 of the table).
-- The explainer excerpt showing more than the diagram: **FIXED** (row 3 of the table).
-
-**Other round-1 notes:**
-- **f592 wipe sliced "spotlight.": FIXED.** The wipe runs 19.53–19.90 over the loop. "spotlight." only fades in from f599 (19.97), after the wipe ends.
-- **"Tested on…" lands before the URL fills the gap above it: STILL PRESENT.** "Tested on…" lands f611–f616 (20.37–20.53). The URL lands f631 (21.03). For 0.5 s there is an empty hole of about 90 px between the tagline and "Tested on…".
-- **7.00–7.10, grey card with an empty chart: FIXED** (no more grey table). What remains is the designed pop: f210, f211 and f212 show the card at 35%, 61% and 82% opacity, with the bars near zero and no caption. Together with the caption fading out at f207–f209, the cut reads as a 5-frame dip. The same happens at 13.0 (f387–f392). This is polish, not a glitch.
-- **The loop implied Codex and Hermes used a fresh critic: FIXED in our text.**
-  - Our caption is generic ("spotlight measures every render. Then a critic reviews it, up to three rounds.").
-  - "Fresh critic" is the diagram's own text.
-  - `docs/other-agents.md` line 57 says "Every run went through `footage.py check` and a critic review", so nothing on screen is false.
-- **"12 phone clips" while the promo uses 5: unchanged.** sources.md sources it as the inputs. Not flagged.
+### Smaller round-1 points
+- **Truncated labels: FIXED.** At 3.067 the label reads "BudTech · Launch video · 20 s", and at 11.033 "Mahoor Coffee · Promo · 20 s" (`c-sq-3.067.png`, `c-sq-11.033.png`).
+- **"60 S"/"20 S": FIXED.** They now read "60 s explainer" and "· 20 s".
+- **"skill" jargon: FIXED.** The kicker now reads "spotlight · videos made by your AI agent".
+- **"Right to left, letters joined.": STILL PRESENT** (optional).
+- **Source audio left out: FIXED, now measured.**
+  - `music-only.wav`, nulled against the bundled `upbeat-rock.mp3` rebuilt from `mix.json` (5.0 s in, −10.7 dB, 0.05/0.8 s fades), comes out −inf everywhere except the fade edges (−56 dB).
+  - `mix.wav − music-only.wav` is −inf everywhere except the nine effect windows.
+  - So the mix holds only the bundled track and the effects, with no clip audio.
+  - The square and landscape audio streams null to −inf: they are identical.
 
 ## 2. New defects
+No glitch frames, overlaps, clipped text or unsupported claims.
+- **Luma scan:** frame-to-frame jumps over 4/255 happen only at 1.5 (BudTech's own cut), 3.0, 5.5, 8.0 and 14.0, all planned cuts.
+- **Pops:** the 35% opacity of the cards' first frames at 8.000 and 14.000 is the designed pop, not a glitch.
+- **Holds:** every frozen hold is 0.2 s or less, within budget.
+- **Layout:** in both renders, every card fits whole in 1080x1080 and no caption of ours touches a clip.
 
-- **No glitch frames** in either file.
-  - The only frame-to-frame spikes are planned cuts or edits inside the café promo: f60 (café, 2.0), f135 (café, 4.5), f210, f300 and f390.
-  - The card move shows as a smooth ramp (f121–f127).
-  - The one flash candidate in square, f80, is the café camera moving: f79→f81 differs more than either single step.
-- **No overlaps or clipped text.**
-  - Every caption sits off the clips.
-  - The labels fit in the 360 px pair cards.
-  - SHIP stays inside the 1040 px card.
-  - The café's lines stay inside the card. Their current renders match by MD5 (`cafe-md5.txt`).
-- **Minor: the exit at 19.5 has about 0.5 s with no text.** The caption fades out at f582–f584, f585 shows the bare card, the wipe runs, and f593–f598 are plain navy. "spotlight." then fades in from 19.97. It reads as a breath and needs no fix.
-- **Cosmetic, landscape:** the hook kicker wraps onto two lines ("spotlight · a skill for / AI coding agents") although there is about 400 px of free space beside it.
+Minor and non-blocking:
+- **Frame 0, square:** the line breaks as "A website and phone clips / in. Finished videos out.", which splits "clips in.". The column has room for "…clips in." on line 1 (about 790 of 936 px).
+- **Landscape hook kicker:** it wraps as "spotlight · videos / made by your AI agent". Round 1's kicker wrapped too, so this isn't a regression.
+- **5.5–8.0:** "Switched to Arabic through its own menu." stays up over BudTech's end card, after the menu is gone.
 
-## 3. Rules
+**Claims:** every line on screen traces to sources.md, and each source was re-read: the README, other-agents.md, SKILL.md, both businesses' plans and sources, and ffprobe. None of our text quotes either business's captions.
 
-- **Codex CLI and Hermes Agent are named in text only.** The cards show their output videos, labelled as samples, with no product logos or UI. Pass.
-- **Every card fits whole in 1080x1080 and no caption lies over a clip's text.** **FAIL in landscape. Square passes.**
-  - The landscape loop card is about 1520 × 520 (x 200–1720 in ls/f560), so it does not fit in 1080x1080.
-  - Neither the brief's Don't #1 nor the plan ("Every card fits whole in 1080x1080") limits the rule to the square.
-  - Every other card keeps to it: the 16:9 cards are 992 wide in both formats, the landscape pair is 2 × 450, and the square loop is 1040.
-  - Round 1's "about 1300" would also have broken it. A critic's suggestion does not override the user's rule.
-  - The fix is a slot change only.
-- **Only the explainer's loop diagram is used.** Pass; any residue is at most 13/255 and invisible.
-- **Northwind Parcels is labelled as a sample wherever its data shows** (7.0–13.0, both cards). It is not on the end card. Pass.
-- **Mahoor Coffee appears only as their own promo**, labelled "Mahoor Coffee · Promo / English / Persian". There is no customer or endorsement wording, and our text never quotes the café's lines ("Some days need a good coffee.", "Today is one of them."). Pass.
+## 3. Sound
+- **Levels:** both renders measure −14.1 LUFS, −2.5 dBTP, LRA 3.9.
+- **Timing:**
+  - Whoosh peaks land at 2.95, 8.0, 10.95, 14.0 and 18.65.
+  - The click (3.85) and toggle (4.15) match the menu.
+  - click-3 (6.70) lands on the button's ring.
+  - The chime (16.8) plays as SHIP fills (16.833–17.0).
+- whoosh-2 at 10.95 is still the faintest effect (residual peak −21 dBFS, against −12 for whoosh-3), as in round 1. It is not buried.
 
-## 4. Sound (unchanged mix, both files)
+## 4. Captions: do they add what the picture can't?
+Mostly yes. They add:
+- the inputs ("A website and phone clips in");
+- that the site was live and the menu its own;
+- "12 phone clips and a logo";
+- "the same timeline";
+- that a second AI agent reviews the video before you see it;
+- "free and open source" and the agents it was tested on.
 
-- **Cuts:** every cut and the URL landing have a music onset at x.98 s, within 20 ms (4.0, 7.0, 10.0, 13.0, 19.5, 21.0).
-- **Effects, measured against music-only:**
+Two lines only name what's on screen: "Right to left, letters joined." and "Up to three rounds."
 
-| Effect | Where it peaks | Level over the music |
-|---|---|---|
-| Whoosh-2 | 3.95 and 6.95 | about +11 to +12 dB broadband |
-| Whoosh-1 | 12.99 | +14.6 dB in its band (2.7–11 kHz), so in-band it is not weak |
-| Chime | rises from 18.21, peaks 18.33 | +28 dB in its band, over the quiet breakdown |
-| Whoosh-3 | 19.64, mid-wipe | +17 dB in its band |
-
-- **The chime sits on SHIP**, which fades in over f547–f553 (18.23–18.43).
-- **Fade:** the bed holds through the URL and fades from 23.2 to 24.0.
-- **Loudness:** −14.0 LUFS integrated and 4.2 LU loudness range, measured on both files. The −1.8 dBTP true peak is taken from check.json.
-
-## 5. Phone-size reading (375 px feed width)
-
-| Text | Cap height at 1080 | On the phone |
-|---|---|---|
-| Headline | about 36–42 px | about 13 px |
-| Kicker | 26 px | about 9 px |
-| "Tested on…" | about 24 px | about 8 px |
-| Sub-lines ("Codex CLI, about 12 minutes", "Right to left, letters joined.", "Then a critic reviews it…") | 22 px | about 7.6 px, small but readable |
-| Sample tag | 20 px | about 7 px, dark on amber |
-
-The story reads on mute from the first frame: what spotlight is, a real café's promo, a Persian cut, two agents on sample data, the check loop, and the URL from 21.03.
-
-## 6. Verdict
-
-**Fixed:** both round-1 blockers.
-
-**Clean:**
-- the square (primary) breaks no rule;
-- the audio is clean;
-- there are no glitch frames.
-
-**Still failing:** the landscape README render breaks the "fits whole in 1080x1080" rule with its 1520-wide loop card.
-
-**Polish left:**
-- the 0.33 s gap with no text at 4.0;
-- the café's own cut stacked at 4.5;
-- the 0.5 s hole above "Tested on…".
-
-**ONE MORE PASS** (3 fixes):
-
-1. **Landscape loop card: 1080 wide or less.**
-   - Use the square's 1040, with the caption below.
-   - It is a slot change in `scene.html` only; the timeline is shared.
-2. **4.0–4.5:** play both café cards from 4.0 at café source t + 0.5 (4.5–7.5), and bring "THE SAME TIMELINE" in at 4.05.
-   - **Why:**
-     - the café's 4.5 cut then hides inside our 4.0 move;
-     - its next cut, at 7.5 (scene scan: 2.0, 4.5, 7.5, 10, 13), lands on our 7.0 hard cut.
-   - **What this needs:**
-     - re-extract `frames/cafe_en`, which stops at source 7.0, and `frames/cafe_fa`, which covers 4.0–7.0, so both reach 7.5;
-     - update the burned-in-text windows in sources.md. The Persian first line (fading out at 4.0–4.5) no longer shows.
-3. **End card:** land "Tested on…" with or after the URL at 21.0, rather than at 20.35 (it is in place by 20.53).
-
-If the user confirms the 1080x1080 rule applies to the square only, this is **SHIP** as is, and fixes 2 and 3 are optional polish.
-
-Dropped as the weakest: the opacity pops at 7.0 and 13.0 (f210, f390).
+## 5. Verdict
+**SHIP.** Both gating items are fixed, and nothing new blocks. Optional polish, none of it blocking:
+1. Break the frame-0 line after "in.".
+2. Make the hook tags 28 px or larger, or tag the cards "From a website" / "From phone clips".
+3. Raise the loop backdrop from .32 to about .5.

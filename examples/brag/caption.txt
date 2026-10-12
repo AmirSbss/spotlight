@@ -1,6 +1,7 @@
-spotlight cut a promo for Mahoor Coffee, a café, from 12 of the owner's phone clips and the logo, plus a Persian cut from the same timeline (shared with the owner's permission). Codex CLI and Hermes Agent each made an explainer with it from the same fictional sample data, and every render is measured and reviewed by a critic before anyone sees it. spotlight is a skill for AI coding agents: point it at a website, some footage or a topic and get back a finished short video.
+A website and a folder of phone clips in, finished videos out. spotlight made a launch video for BudTech from its live site (switching it to Arabic through its own menu), and a promo for Mahoor Coffee from 12 of the owner's phone clips, with a Persian cut from the same timeline. Both are shared with their owners' permission. Every render is measured and reviewed by a critic before anyone sees it.
 
-Get it: github.com/AmirSbss/spotlight
-Music by Sascha Ende at ende.app
+spotlight is a skill for AI coding agents, tested on Claude Code, Codex CLI and Hermes Agent: github.com/AmirSbss/spotlight
+
+Music by Sascha Ende at ende.app (CC BY 4.0)
 
 #AIagents #video #opensource

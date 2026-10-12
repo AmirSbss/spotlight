@@ -1,67 +1,60 @@
-# Plan: spotlight launch video v2 (brag, 24 s, English, no AI, no narration), one timeline in two formats
+# Plan: spotlight LinkedIn demo (brag, 23 s, English, no AI, no narration), one timeline in two formats
 
-- **Square 1080x1080** (LinkedIn, primary, muted autoplay): `spotlight-output-reel/`.
-- **Landscape 1920x1080** (README): `spotlight-output-v2/`. Same `scene.html`, frames and `mix.wav`; only `width`/`height` in `timeline.js` differ.
+- **Square 1080x1080** (LinkedIn, primary, muted autoplay): `spotlight-output-reel2/`.
+- **Landscape 1920x1080** (README): `spotlight-output-v3/`. Same `scene.html`, frames and `mix.wav`; only `width`/`height` in `timeline.js` differ.
 
-**Angle.** Real footage first: a real café's promo that spotlight cut from the owner's phone clips (and its Persian cut), then explainers two other agents made from data, then the check loop every render goes through, then the repo.
+**Angle.** Real material in, finished videos out. Two real businesses' videos, each made by spotlight from what the business had: a live website, and a folder of phone clips. Then the check every render goes through, then the repo.
 
-**Hook (0–4 s).** Frame 0 is finished: the Mahoor Coffee promo playing in a 9:16 player card (its shaker flip, its own "MAHOOR COFFEE" title), beside "spotlight · a skill for AI coding agents / A café promo from 12 phone clips and a logo."
+**Hook (0–3 s).** Frame 0 is finished: both videos play side by side in 9:16 player cards ("BudTech · Launch video", "Mahoor Coffee · Promo") under "spotlight · videos made by your AI agent / A website and phone clips in. Finished videos out."
 
-**Layout.** Cards sit in slots that `scene.html` places per format (`#slot-v`, `#slot-va`/`#slot-vb`, `#slot-h`); `draw()` measures them once and moves the cards between them.
-- 9:16 card: 450x800 + a 44 px bar.
-- The pair: 2 × 360x640 in square, 2 × 450x800 in landscape.
-- 16:9 card: 992 wide with a 52 px bar (its 26 px sample-data tag reads at phone size); the Codex clip is cropped to its chart panel (x 214–1706, y 238–840 of 1920x1080; 992x400).
-- The loop: the explainer cropped to its diagram (x 140–1800, y 356–836), its faint backdrop text darkened (`-level 10%`); 1040 wide in both formats (square: caption block centred under it; landscape: right of the caption column), so it fits 1080x1080 like every other card.
-- Every card fits whole in 1080x1080.
-- Captions sit in a column left of the cards (landscape, and square beside the single 9:16 card) or under the cards (square, the pair and the 16:9 cards). They never lie over a clip.
+**Layout.** The slot system from v2. 9:16 card 450x800 (+44 px bar); the pair 2 × 360x640 in square, 2 × 450x800 in landscape; the loop diagram 1040 wide in landscape, 936 in square (inset to the 72 px side margin). Every card fits whole in 1080x1080. Captions sit left of the cards (landscape; square beside a single card) or under them (square, the pair and the loop). None lies over a clip.
 
 ## Shots
 | # | Time | Source | In–out (source s) | Motion | On-screen text (ours) | Transition |
 |---|---|---|---|---|---|---|
-| Hook | 0.0–4.0 | `cafe/spotlight-output/video.mp4` (EN promo) in the 9:16 card | 0.0–4.0 (the shaker flip, then espresso at the bar) | card push 1 → 1.012 | kicker (36 px) "spotlight · a skill for AI coding agents"; "A café promo from 12 phone clips and a logo." (frame 0); bar "Mahoor Coffee" · "Promo · 20 s" | on 4.0 the card moves left (0.2 s) |
-| Persian | 4.0–7.0 | EN card + `cafe/spotlight-output-fa/video.mp4` sliding in beside it (4.1–4.35, opaque by 4.2) | both play the promo's 4.5–7.5 (the pour; its own cuts at 4.5 and 7.5 land on our 4.0 and 7.0; the café's own mood line in English and Persian) | the pair | kicker "The same timeline" (4.15); "…and a Persian cut."; "Right to left, letters joined."; bars "Mahoor Coffee" · "English" / "Persian" | hard cut on 7.0, card pops (0.94 → 1) |
-| Codex | 7.0–10.0 | `showcase/codex-sample-explainer.mp4` | 4.0–7.0 (bar chart grows), cropped to the chart panel | pop, drift | kicker "Data in, explainer out"; "Same prompt, same sample data."; "Codex CLI, about 12 minutes"; tag "Sample data · fictional courier" | hard cut on 10.0, pop (the caption stays) |
-| Hermes | 10.0–13.0 | `showcase/hermes-sample-explainer.mp4` | 7.6–10.6 (globe, routes drawing) | pop, drift | the same caption + "Hermes Agent, about 27 minutes" (10.1); tag "Sample data · fictional courier" | hard cut on 13.0 (breakdown starts), pop |
-| Loop | 13.0–19.5 | `showcase/explain-why-spotlight-checks-its-own-videos.mp4`, cropped to the diagram (x 140–1800, y 356–836), darkened | 40.2–42.6 + 43.5–47.6 (the diagram builds; a 0.9 s still stretch of the finished diagram is trimmed at the join; "3 rounds max", the pulse, SHIP lands at source 46.3 = video 18.2) | pop, drift | kicker "Before you see it"; "spotlight measures every render."; "Then a critic reviews it, up to three rounds." | wipe into the end card at 19.5 |
-| End | 19.5–24.0 | dark end card | — | wipe 19.5–19.92; lines land 19.95, 20.1 (after the wipe); URL at 21.0 with the drums' return; "Tested on…" at 21.1 | "spotlight."; "Finished short videos from your AI coding agent."; "github.com/AmirSbss/spotlight"; "Tested on Claude Code, Codex CLI and Hermes Agent" | — |
+| Hook | 0.0–3.0 | `budtech/spotlight-output/video.mp4` (A) + `cafe/spotlight-output/video.mp4` (B), the pair | BudTech 0.0–3.0; café 0.0–3.0 | clips play | kicker (36 px) "spotlight · videos made by your AI agent"; "A website and phone clips in. Finished videos out." (frame 0) | B fades 2.9–3.0, A moves to the single slot 3.0–3.2 |
+| Website | 3.0–8.0 | BudTech (A), single | 3.0–5.5, continuous from the hook: the live site (3.0), the language menu tapped (3.85), Arabic (4.5); then its own end card, source 16.4–18.9 ("Request a quote" tapped at our 6.7) | the move | kicker "1 · A launch video"; "Built from the live site, budtech.om."; "Switched to Arabic through its own menu." (3.2–3.8, after the move) | hard cut, card pops |
+| Clips | 8.0–11.0 | café (A), single | 4.5–7.5 (the pour) | pop | kicker "2 · A café promo"; "From 12 phone clips and a logo." | at 11.0 A moves aside (0.2 s) |
+| Persian | 11.0–14.0 | café (A) + `cafe/spotlight-output-fa/video.mp4` (B) sliding in (11.1–11.35) | both 10.0–13.0 (the counter; the jump is to the promo's own 10.0 s cut) | the pair | kicker "The same timeline"; "…and a Persian cut."; "Right to left, letters joined." (11.12–11.55) | hard cut, card pops |
+| Loop | 14.0–18.5 | `showcase/explain-why-spotlight-checks-its-own-videos.mp4`, cropped to the diagram (x 140–1800, y 356–836), faint backdrop text darkened | 43.5–48.0 ("3 rounds max", the pulse, SHIP at source 46.3 = video 16.8) | pop, drift | kicker "Before you see it"; "Measured, then reviewed by a second AI agent."; "Up to three rounds." | wipe into the end card at 18.5 |
+| End | 18.5–23.0 | dark end card | — | wipe 18.5–18.92; lines land 18.8, 18.95, 19.2, 19.6; URL 19.5 | "spotlight."; "Finished short videos from your AI coding agent."; "Free and open source"; "github.com/AmirSbss/spotlight"; "Tested on Claude Code, Codex CLI and Hermes Agent" | — |
 
-Durations: 4.0 + 3.0 + 3.0 + 3.0 + 6.5 + 4.5 = 24.0 s. `end` = 19.5, so `--end-card 4.5`.
+Durations: 3.0 + 5.0 + 3.0 + 3.0 + 4.5 + 4.5 = 23.0 s. `end` = 18.5, so `--end-card 4.5`.
 
-**Backdrops.** Kit `clip` shots of the same clip, blurred 40 px and dimmed (.32), plus a warm beam crossing at a constant ~350 px/s (it turns round at 1.0, 6.5, 12.0 and 17.5 s, inside shots whose clips move).
+**Backdrops.** Kit `clip` shots of the BudTech, café and loop frames, blurred 40 px and dimmed (.32), plus a warm beam crossing at ~350 px/s (turning round inside moving shots).
 
-**Mahoor Coffee.** Shown only as their own promo: labelled "Mahoor Coffee" with "Promo", "English", "Persian". No quote, logo-as-endorsement or "customer" wording. The café's own captions and blur box are untouched, inside the card.
+**The two businesses.** Shown only as their own videos, labelled with their names and "Launch video" / "Promo" / "English" / "Persian". Our text quotes neither video's captions and makes no claim about either business beyond what the videos are and what they were made from.
 
 ## Music and effects
-- `assets/music/upbeat.mp3` ("Happy Beats & Business Moves Vol. 1", music by Sascha Ende at ende.app, CC BY 4.0), track 16.02 → 40.02 s: its beat grid starts at 16.02 s, so every cut lands on a beat (re-mixed after the owner found the earlier CC0 track harsh).
-- The breakdown (track 72–80) sits under the check loop (13.0–21.0), and the drums return at 21.0 as the URL lands.
-- Cuts on the beat grid: 4.0, 7.0, 10.0, 13.0, 19.5, and the URL at 21.0.
+- `assets/music/upbeat-rock.mp3` ("The Show Begins Vol. 8", Sascha Ende, CC BY 4.0), track 5.0 → 28.0 s: the riff under the hook, the full band from video 6, a breath at video 14 (the check loop), full again to the end. fade_in 0.05, fade_out 0.8. Loudness range 4.2 LU. A first mix on `upbeat.mp3` (45–68 s) measured 0.7 LU, flat for an upbeat piece.
+- Every cut lands on its beat (120 BPM from track 8.01): 3.0, 8.0, 11.0, 14.0, 18.5.
 
 | t (s) | File | Why |
 |---|---|---|
-| 3.95 | whoosh-2 (peak, target +6) | the card moves to make room for the Persian cut |
-| 6.95 | whoosh-2 (peak, target +6) | café → data |
-| 13.0 | whoosh-1 (peak) | data → the check loop |
-| 18.2 | chime-2 | SHIP lands |
-| 19.65 | whoosh-3 (peak) | end-card wipe |
+| 2.95 | whoosh-2 (peak) | the pair becomes one card |
+| 3.85 | click-2 | the language menu is tapped (on screen in the BudTech card) |
+| 4.15 | toggle-1 | "العربية" chosen |
+| 6.7 | click-3 | "Request a quote" tapped on BudTech's end card |
+| 8.0 | whoosh-3 (peak) | website → phone clips |
+| 10.95 | whoosh-2 (peak) | the card moves aside for the Persian cut |
+| 14.0 | whoosh-3 (peak) | → the check loop |
+| 16.8 | chime-2 | SHIP lands |
+| 18.65 | whoosh-3 (peak) | end-card wipe |
 
-No live sound: the café promo's own music would clash with the track.
+No live sound: the source videos' own audio stays out.
 
 ## AI assets
 | File | Prompt | Purpose | Shot |
 |---|---|---|---|
-| none | — | real footage covers every beat | — |
+| none | — | real videos cover every beat | — |
 
 ## Critic rounds
 - **Round 1** (`critics/critic-1.md`): ONE MORE PASS. Fixed:
-  - the hook now says what spotlight is at phone size (a 36 px kicker: "spotlight · a skill for AI coding agents");
-  - the sample label reads at phone size (26 px tag on a 52 px bar) and the caption says "same sample data";
-  - the loop excerpt is darkened so its faint install lines vanish, and the crop moved down;
-  - the 4.0 s move is quicker (0.3 s), the Persian card arrives opaque by 4.25, the tag swaps mid-move, the pair lines up (the push eases back), and the caption lands at 4.3;
-  - the loop is 1040 wide in square with its caption centred under it, and 1500 wide in landscape with the caption below; the line names spotlight;
-  - the Codex card is cropped to its chart panel; the data caption fits one line, leaving ≥ 60 px above it in square; the landscape pair is 2 × 450x800; the end-card lines land after the wipe.
-  Also: landscape measured a 0.8 s hold at 14.1 s (the finished diagram sitting still, its faint backdrop now darkened), so the loop clip trims that stretch and the beam's turnarounds moved into moving shots.
-- **Round 2** (`critics/critic-2.md`, a fresh verification critic): ONE MORE PASS (3 fixes). Round 1's changes were FIXED except the 4.0 s transition (PARTLY). Fixed:
-  - the landscape loop card was ~1520 px wide, breaking the fit-in-1080 rule: it is now 1040 wide in both formats;
-  - from 4.0 both café cards play the promo from its 4.5 s cut, so its own cuts land on ours, and the caption lands at 4.15 (the move takes 0.2 s, so nothing collides);
-  - "Tested on…" lands after the URL (21.1).
-- **Round 3** (`critics/critic-3.md`, a fresh verification critic, the last round): **SHIP**. All three round 2 fixes are visible in both renders, and every rule holds in both. Left as they are (cosmetic): 5 text-free frames during the 4.0 s move, the card fade-ins at 7.0 and 13.0, the landscape hook kicker wrapping to two lines, a one-frame truncated card label at 4.03 s, and the landscape loop labels at about two-thirds their earlier size (the cost of the fit-in-1080 rule).
+  - the square's kickers wrapped badly and repeated the lines: now "1 · A launch video", "2 · A café promo";
+  - `sources.md` cited README lines removed in the README rewrite: every row is re-cited to the current README (lines 1, 3, 15–16, 108, 111, 117) and docs, and its People section now lists every shot;
+  - the loop caption repeated the diagram's labels: now "Measured, then reviewed by a second AI agent. / Up to three rounds."; the square loop card is inset to the 72 px margins;
+  - the end card gives a reason to click: "Free and open source";
+  - "skill" was jargon in the hook: "spotlight · videos made by your AI agent";
+  - the BudTech card's last 2.5 s show its own end card (the site's name, Arabic name, "Request a quote" tapped, budtech.om) instead of a stock-looking photo;
+  - captions land sooner after the moves (3.2, 11.12), the mark at 18.8; tags keep their own case ("20 s", not "20 S").
+- **Round 2** (`critics/critic-2.md`, a fresh verification critic): **SHIP**. Both gating fixes hold, and the music-only track was measured to match the bundled track, so no source audio is in the mix. Left as they are (cosmetic, per the loop's stop-at-SHIP rule): frame 0's line breaks as "…phone clips / in. Finished videos out.", the hook's "Launch video"/"Promo" tags are small at phone size, the loop backdrop is dark (32/255), "Up to three rounds." echoes the diagram's "3 rounds max", the landscape hook kicker wraps, and the Arabic-menu line stays up over BudTech's end card.
