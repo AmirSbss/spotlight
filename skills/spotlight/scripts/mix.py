@@ -1,11 +1,17 @@
 #!/usr/bin/env python3
+# /// script
+# requires-python = ">=3.10"
+# dependencies = ["numpy>=1.26,<3", "scipy>=1.11,<2", "soundfile>=0.12,<1"]
+# [tool.uv]
+# exclude-newer = "2026-09-01T00:00:00Z"
+# ///
 """Sound mix for spotlight: music bed + SFX + live clip audio + voice, levelled per event.
 
   mix.py <work/mix.json>    -> mix.wav, music-only.wav, mix-report.txt next to mix.json
 
 mix.json (every key but duration is optional):
   { "music":  {"file": str, "start": s, "fade_in": s, "fade_out": s, "gain_lufs": LUFS},
-    "sfx":    [{"file": str, "t": s, "target_db": dB, "cap_db": dB}],
+    "sfx":    [{"file": str, "t": s, "align": "start"|"peak", "target_db": dB, "cap_db": dB}],
     "clips":  [{"file": str, "start": s, "dur": s, "t": s, "gain_db": dB over the bed, default -15}],
     "voice":  [{"file": str, "t": s}],
     "duration": s }
@@ -21,7 +27,8 @@ credited in NOTICE.md). music-only.wav is the same bed and clip audio without vo
 effects: the fallback version, still ducked so it matches the full mix. Final loudness is
 left to footage.py encode (two-pass, -14 LUFS).
 
-Needs ffmpeg. The numpy/scipy/soundfile deps come with `uv run --project <this folder>`.
+Needs ffmpeg. Run it with `uv run mix.py mix.json`: uv reads the dependencies above and keeps their environment in
+its own cache, never next to this file (the skill folder may be read-only).
 """
 import argparse
 import json
@@ -205,7 +212,7 @@ def mix(cfg, outdir):
             measured = integrated_lufs(bed, tmp, "bed")
             gain = level(bed_lufs, measured)  # a silent bed stays silent
             bed *= 10 ** (gain / 20)
-            report.append(f"music: {Path(music['file']).name} window {start / SR:.2f}-{duration:.2f}s "
+            report.append(f"music: {Path(music['file']).name} track {start / SR:.2f}-{(start + len(seg)) / SR:.2f}s "
                           f"-> {bed_lufs:.1f} LUFS bed (gain {gain:+.1f} dB"
                           + (", bed measures silent" if measured <= SILENT else "")
                           + f"), fades {float(music.get('fade_in') or 0):.2f}/"
@@ -237,12 +244,15 @@ def mix(cfg, outdir):
         report.append(f"clips: {len(cfg.get('clips') or [])} live-audio event(s)")
         for i, e in enumerate(cfg.get("sfx") or []):
             s = decode(src(e["file"]), tmp, f"sfx{i}")
-            t = float(e["t"])
+            t = at = float(e["t"])
+            if e.get("align") == "peak":  # a whoosh swells: its loudest moment, not its first sample, lands on the cut
+                t = max(0.0, at - float(np.argmax(np.max(np.abs(s), axis=1))) / SR)
+            where = f"@ {t:.2f}s" + (f" (peak on {at:.2f}s)" if e.get("align") == "peak" else "")
             try:
                 gain, r = solve_sfx(s, t, mixdown, float(e.get("target_db") or TARGET_DB),
                                     float(e.get("cap_db") or CAP_DB))
             except RuntimeError as err:  # one bad effect never costs the whole mix
-                report.append(f"sfx {i + 1} {Path(e['file']).name} @ {t:.2f}s  skipped: {err}")
+                report.append(f"sfx {i + 1} {Path(e['file']).name} {where}  skipped: {err}")
                 continue
             place(mixdown, s, t, gain)
             why, value = r["why"]
@@ -253,8 +263,8 @@ def mix(cfg, outdir):
                 lift = f"{r['in_band']:+.1f} dB ({why} {value:+.1f})"
             else:
                 lift = f"n/a over a silent bed ({why} {value:+.1f})"
-            line = (f"sfx {i + 1} {Path(e['file']).name} @ {t:.2f}s  gain {r['gain_db']:+.1f} dB  "
-                    f"in-band {lift}; {lo:.0f}-{hi:.0f} Hz, {BODY * 1000:.0f} ms body")
+            line = (f"sfx {i + 1} {Path(e['file']).name} {where}  gain {r['gain_db']:+.1f} dB  "
+                    f"in-band peak {lift}; {lo:.0f}-{hi:.0f} Hz, {BODY * 1000:.0f} ms body")
             if r["hf"] is not None:
                 line += f"  hf {r['hf']:+.1f} dB"
             if r["peak"] is not None:

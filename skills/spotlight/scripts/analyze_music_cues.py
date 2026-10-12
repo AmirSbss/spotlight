@@ -1,4 +1,10 @@
 #!/usr/bin/env python3
+# /// script
+# requires-python = ">=3.11"
+# dependencies = ["librosa>=0.10.2,<0.12", "numpy>=1.26,<3", "scipy>=1.11,<2", "soundfile>=0.12,<1"]
+# [tool.uv]
+# exclude-newer = "2026-09-01T00:00:00Z"
+# ///
 """Generate music cue metadata (tempo, beat grid, strong cues) for any track.
 
 Used two ways: (1) a maintainer tool to precompute the bundled-track cue

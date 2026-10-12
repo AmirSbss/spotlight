@@ -64,6 +64,19 @@ def edges(d):
     assert "music runs out at 12.00s, 2.00s before the end" in report, report
     assert re.search(r"^sfx 1 click\.wav @ 13\.97s  skipped", report, re.M), report
     assert "voice 1 @ 13.00s runs 1.00s past the end: trimmed" in report, report
+    assert "track 0.00-12.00s" in report, report  # the music line speaks track time, not video time
+
+    # align: peak puts a swell's loudest moment (0.3 s in) on t, not its start
+    ff("-f", "lavfi", "-i", "aevalsrc=pow(sin(PI*t/0.6)\\,2)*sin(2*PI*1500*t):s=48000:d=0.6", "-ac", "2", w / "swell.wav")
+    (w / "mix.json").write_text(json.dumps({
+        "music": {"file": "music.wav"}, "sfx": [{"file": "swell.wav", "t": 5.0, "align": "peak"}], "duration": 8.0}))
+    r = subprocess.run([sys.executable, MIXPY, w / "mix.json"], capture_output=True, text=True, cwd="/")
+    assert r.returncode == 0, (r.stdout, r.stderr)
+    assert "swell.wav @ 4.70s (peak on 5.00s)" in (w / "mix-report.txt").read_text(), (w / "mix-report.txt").read_text()
+    full, _ = sf.read(w / "mix.wav", always_2d=True)
+    bed, _ = sf.read(w / "music-only.wav", always_2d=True)
+    peak_at = (np.argmax(np.abs((full - bed)[:, 0])) / SR)
+    assert abs(peak_at - 5.0) < 0.03, peak_at
 
     # no music, no duration: the length covers the whole clip and the whole voice line, plus 0.5 s
     (w / "mix.json").write_text(json.dumps({
@@ -154,18 +167,18 @@ def main():
         sfx_only = win(mix - bed, 2.0, 2.15)
         lift = 20 * np.log10(band_peak(sfx_only, *band) / band_peak(win(bed, 2.0, 2.15), *band))
         assert abs(lift - 3.5) <= 1.0, f"rendered in-band lift {lift:.1f} dB, want 3.5 +-1"
-        assert "in-band +3.5 dB (target" in lines[1][1], lines[1][1]
+        assert "in-band peak +3.5 dB (target" in lines[1][1], lines[1][1]
 
         # sfx 2: asking for 12 dB, the 2-8 kHz lift is capped at 4 dB
-        m = re.search(r"in-band ([+-][0-9.]+) dB \(hf cap", lines[2][1])
+        m = re.search(r"in-band peak ([+-][0-9.]+) dB \(hf cap", lines[2][1])
         assert m and float(m[1]) <= 4.1, lines[2][1]
         hf = float(re.search(r"hf ([+-][0-9.]+) dB", lines[2][1]).group(1))
         assert hf <= 4.05, hf
 
         # sfx 3: a tight cap_db is honoured -- the broadband peak is held at cap_db over the local bed peak
-        m = re.search(r"in-band ([+-][0-9.]+) dB \(peak cap ([+-][0-9.]+)", lines[3][1])
+        m = re.search(r"in-band peak ([+-][0-9.]+) dB \(peak cap ([+-][0-9.]+)", lines[3][1])
         assert m and float(m[1]) > float(m[2]), lines[3][1]  # the cap held the effect below its target lift
-        assert float(re.search(r"peak ([+-][0-9.]+) dB", lines[3][1]).group(1)) <= float(m[2]) + 0.05, lines[3][1]
+        assert float(re.search(r"  peak ([+-][0-9.]+) dB$", lines[3][1]).group(1)) <= float(m[2]) + 0.05, lines[3][1]
         edges(d)
         bundled(d)
     print("mix: all checks passed")
