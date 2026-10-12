@@ -45,6 +45,10 @@ It sorts the clips, drops the shaky and dark ones, opens on the strongest moving
 
 This gives you a 90-second landscape video: a hook question, three to five sections that each make one claim and show the evidence, then a takeaway. Every number on screen comes from your CSV, and `sources.md` says where each line of text came from.
 
+[![An explainer spotlight made about its own quality check](examples/explain/preview.gif)](examples/explain/video.mp4)
+
+*A 60-second narrated explainer about spotlight's own quality check, made by an agent that knew spotlight only from its `SKILL.md`, from real check results and a real critic report. [Watch it with sound](examples/explain/video.mp4). Its [sources](examples/explain/sources.md) trace every line on screen, and its [plan](examples/explain/plan.md) has the command and the three critic rounds ([reports](examples/explain/critics)).*
+
 ### Your footage, the brand's own words
 
 ```text
@@ -115,7 +119,7 @@ You need ffmpeg 4.4 or newer with the zscale filter, ImageMagick 6 or 7, Python 
 
 ## Status
 
-Phases 1 to 3 of 4 are done: the three modes, website capture, the check and the critic loop; sound (a bundled CC0 music and sound-effects library, levelled effects and optional local narration); and visuals (charts, diagrams, a routes globe and an extruded logo). Phase 4 brings more demos. The design and the plans live in [docs/superpowers](docs/superpowers).
+Phases 1 to 3 of 4 are done: the three modes, website capture, the check and the critic loop; sound (a bundled CC0 music and sound-effects library, levelled effects and optional local narration); and visuals (charts, diagrams, a routes globe and an extruded logo). Phase 4 adds a finished example per mode, made with spotlight itself; the explainer is in [examples/explain](examples/explain). The design and the plans live in [docs/superpowers](docs/superpowers).
 
 ## Tests
 

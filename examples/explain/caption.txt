@@ -1,0 +1,5 @@
+spotlight: point your AI agent at a website, some footage or a topic, and get back a finished short video. Why does spotlight check its own videos? Because numbers can pass while a video still isn't ready: every render is measured, then a fresh critic watches it, and the loop runs up to three rounds before anything ships.
+
+Get it: github.com/AmirSbss/spotlight
+
+#AIagents #video #opensource

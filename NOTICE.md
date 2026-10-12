@@ -8,7 +8,9 @@
 | three.js 0.170.0 (mrdoob/three.js): `three.module.min.js` and the `SVGLoader` addon | `skills/spotlight/kit/three/` (licence in `LICENSE` there) | MIT |
 | Natural Earth 1:110m land (naturalearthdata.com, v5.1.2), baked into land dots | `skills/spotlight/kit/three/land-dots.js` | Public domain |
 | "Montage" by wipics ([OpenGameArt](https://opengameart.org/content/montage)): music, 17.47 to 42.47 s | `examples/demo/video.mp4` (audio only; the track itself isn't in the repo) | CC0 |
-| Space Grotesk, Inter, JetBrains Mono (Google Fonts) | rendered into `examples/demo/video.mp4` | SIL OFL 1.1 |
+| "Dancing" by Holizna (bundled as `assets/music/calm.mp3`): music, 18.5 to 78.5 s | `examples/explain/video.mp4` | CC0 |
+| Piper voice `en_US-ljspeech-high`, trained on LJ Speech: narration | `examples/explain/video.mp4` | Public domain |
+| Space Grotesk, Inter, JetBrains Mono (Google Fonts) | rendered into `examples/demo/video.mp4` and `examples/explain/video.mp4` | SIL OFL 1.1 |
 
 The bundled music (`skills/spotlight/assets/music/`) and sound effects (`skills/spotlight/assets/sfx/`) are CC0. Each file's author, source page and licence statement are in the `LICENSES.md` beside it.
 
