@@ -47,7 +47,7 @@ This gives you a 90-second landscape video: a hook question, three to five secti
 
 [![An explainer spotlight made about its own quality check](examples/explain/preview.gif)](examples/explain/video.mp4)
 
-*A 60-second narrated explainer about spotlight's own quality check, made by an agent that knew spotlight only from its `SKILL.md`, from real check results and a real critic report. [Watch it with sound](examples/explain/video.mp4). Its [sources](examples/explain/sources.md) trace every line on screen, and its [plan](examples/explain/plan.md) has the command and the three critic rounds ([reports](examples/explain/critics)).*
+*A 60-second narrated explainer about spotlight's own quality check, built from real check results and a real critic report. An agent that knew spotlight only from its `SKILL.md` started it, then it went through two more critic rounds. [Watch it with sound](examples/explain/video.mp4). Its [sources](examples/explain/sources.md) trace every line on screen, and its [plan](examples/explain/plan.md) has the command and the three critic rounds ([reports](examples/explain/critics)).*
 
 ### Your footage, the brand's own words
 
