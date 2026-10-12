@@ -38,6 +38,7 @@
   .cap.low { bottom: var(--safe-bottom); }
   .cap.high { top: var(--safe-top); }
   .cap.mid { top: 50%; transform: translateY(-50%); }
+  .cap.left { right: 52%; } .cap.right { left: 52%; }  /* landscape: one half for the caption, the other for the evidence */
   .rule { width: 0; height: calc(4px * var(--k)); background: var(--accent); margin-bottom: calc(26px * var(--k)); }
   [dir=rtl] .rule { margin-left: auto; }
   .kicker { font: 600 calc(36px * var(--k))/1.25 var(--body); letter-spacing: .22em; text-transform: uppercase;
@@ -58,7 +59,7 @@
   .chart { width: 100%; max-width: calc(1000px * var(--k)); color: var(--text); font: 500 calc(32px * var(--k))/1.25 var(--body); }
   .chart + .chart { margin-top: calc(40px * var(--k)); }
   .chart[data-kind=number] { font: 700 calc(190px * var(--k))/1 var(--display); color: var(--accent); font-variant-numeric: tabular-nums; }
-  .chart[data-kind=bar] { display: flex; align-items: flex-end; gap: calc(28px * var(--k)); }
+  .chart[data-kind=bar] { display: flex; align-items: flex-end; gap: calc(28px * var(--k)); padding-top: calc(64px * var(--k)); } /* the tallest value sits above its bar */
   .chart[data-kind=bar] .col { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; }
   .chart[data-kind=bar] .plot { position: relative; width: 100%; height: calc(var(--chart-h, 440px) * var(--k)); display: flex; align-items: flex-end; justify-content: center; }
   .chart[data-kind=bar] .bar { width: 68%; height: 0; background: var(--accent); border-radius: calc(8px * var(--k)) calc(8px * var(--k)) 0 0; }
@@ -80,7 +81,7 @@
   /* diagrams: lines draw in, nodes and labels fade in (kit.js); restyle freely per video */
   .diagram { display: block; width: 100%; overflow: visible; }
   .diagram :is(path, line, polyline) { fill: none; stroke: var(--accent); stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; }
-  .diagram :is(circle, rect, ellipse) { fill: var(--accent); }
+  .diagram :is(circle, rect, ellipse) { fill: color-mix(in srgb, var(--accent) 22%, var(--ink)); stroke: var(--accent); stroke-width: 3; }
   .diagram text { fill: var(--text); font: 600 22px var(--body); }
   .chart .s0 { stroke: var(--accent); background: var(--accent); }
   .chart .s1 { stroke: color-mix(in srgb, var(--accent) 55%, var(--paper)); background: color-mix(in srgb, var(--accent) 55%, var(--paper)); }
@@ -98,6 +99,8 @@
   .end-big { font: 700 calc(72px * var(--k))/1.15 var(--display); color: var(--ink); }
   .end-line { font: 600 calc(42px * var(--k))/1.3 var(--body); color: var(--ink); }
   .end-small { font: 500 calc(38px * var(--k))/1.3 var(--body); color: var(--muted); }
+
+  /* your styles: here, after the template's, so they win */
 </style>
 </head>
 <body>

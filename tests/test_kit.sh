@@ -114,12 +114,14 @@ lum() { $IM "$@" -colorspace gray -format '%[fx:mean]' info:; }
 python3 -c "import sys; r = $(lum "$u/check/t0.00.png") / $(lum "$u/page.png" -crop 320x568+0+100); sys.exit(0 if 0.45 < r < 0.75 else print('FAIL: web shot ignored filter, luma ratio', r) or 1)"
 # charts: bars settle at heights in the data's ratio, a number settles on its exact source string (Persian digits and
 # separator kept) and counts up in the same digits, a donut's arcs follow the data, every chart stays inside the side
-# margins in both formats, and parallel capture changes no pixel
+# margins in both formats, and parallel capture changes no pixel. Bar and donut values are only ever the data's own
+# strings (a count-up showed numbers that aren't in the data), the tallest bar's value stays clear of the kicker above,
+# and a line's negative values stay inside its plot
 CHARTS=$(cat <<'HTML'
-<div class="cap mid" data-a="0.1" data-b="2.9"><div class="chart" data-kind="bar" data-values='[10, 20, "40"]' data-labels='["A", "B", "C"]' data-at="0.2" data-dur="1"></div>
+<div class="cap mid" data-a="0.1" data-b="2.9"><div class="kicker" data-at="0.1">Kicker</div><div class="chart" data-kind="bar" data-values='[10, 20, "40"]' data-labels='["A", "B", "C"]' data-at="0.2" data-dur="1"></div>
   <div class="chart" data-kind="number" data-value="۱۲٬۴۰۰" data-at="0.2" data-dur="1" lang="fa"></div>
   <div class="chart" data-kind="donut" data-values='["25%", "75%"]' data-labels='["x", "y"]' data-at="0.2" data-dur="1"></div>
-  <div class="chart" data-kind="line" data-values='[3, 1, 4, 1, 5]' data-labels='["1", "2", "3", "4", "5"]' data-at="0.2" data-dur="1"></div></div>
+  <div class="chart" data-kind="line" data-values='[3, -1, 4, -2, 5]' data-labels='["1", "2", "3", "4", "5"]' data-at="0.2" data-dur="1"></div></div>
 HTML
 )
 for fmt in 320x568 568x320; do
@@ -140,8 +142,11 @@ PY
       const side = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--side'));
       return { bars: q('.chart .bar').map((e) => e.getBoundingClientRect().height),
                num: q('.chart[data-kind=number]')[0].textContent,
-               arcs: q('.chart[data-kind=donut] .seg').map((e) => parseFloat(e.getAttribute('stroke-dasharray'))),
+               arcs: q('.chart[data-kind=donut] .seg').map((e) => e.getTotalLength()),
                line: +q('.chart[data-kind=line] .ln')[0].style.strokeDashoffset,
+               vals: q('.chart .val').map((e) => [e.textContent, +getComputedStyle(e).opacity]),
+               clear: q('.chart .bar + .val').pop().getBoundingClientRect().top >= q('.kicker')[0].getBoundingClientRect().bottom - 1,
+               dots: q('.chart[data-kind=line] .dot').every((d) => { const r = d.getBoundingClientRect(), s = d.ownerSVGElement.getBoundingClientRect(); return r.top >= s.top - 1 && r.bottom <= s.bottom + 1; }),
                inside: q('.chart').every((e) => { const r = e.getBoundingClientRect(); return r.width > 10 && r.left >= side - 1 && r.right <= innerWidth - side + 1; }) }; }, t);
     console.log(JSON.stringify({ mid: await at(0.7), end: await at(1.8) }));
     await b.close();")
@@ -154,19 +159,26 @@ assert set(m["num"]) <= set("۰۱۲۳۴۵۶۷۸۹٬") and 0 < int(m["num"].repla
 a = e["arcs"]; assert len(a) == 2 and abs(a[1] / a[0] - 3) < 0.05, a
 assert e["line"] < 0.001 and m["line"] > 0.01, (m["line"], e["line"])
 assert e["inside"] and m["inside"], "a chart crosses the side margins"
+data = ["10", "20", "40", "25%", "75%", "3", "-1", "4", "-2", "5"]
+for k in (m, e):
+    assert [v for v, _ in k["vals"]] == data, k["vals"]  # bars, donut legend, line labels: never an in-between number
+assert all(o == 1 for _, o in e["vals"]) and any(o < 1 for _, o in m["vals"][:5]), (m["vals"], e["vals"])
+assert e["clear"], "the tallest bar's value overlaps the kicker above the chart"
+assert e["dots"], "a negative line value falls outside the plot"
 PY
 done
 q="$t/chart320x568"; (cd "$q" && CAPTURE_WORKERS=1 node "$ROOT/skills/spotlight/scripts/capture.mjs" frames >/dev/null && (cd out && md5sum *.jpg) > serial.md5 \
   && CAPTURE_WORKERS=4 node "$ROOT/skills/spotlight/scripts/capture.mjs" frames >/dev/null && (cd out && md5sum -c --quiet ../serial.md5)) \
   || { echo "FAIL: parallel capture changed chart pixels"; exit 1; }
 # diagrams: a path draws in from its data-at over data-dur (hidden before, partly drawn mid-way, whole after);
-# other diagram elements fade in like caption lines
+# other diagram elements fade in like caption lines; parallel capture changes no pixel of a drawing line (a donut's
+# changing stroke-dasharray once kept stale pixels from whichever frame a worker drew before)
 dg="$t/diagram"; mkdir -p "$dg"; cp "$ROOT/skills/spotlight/kit/scene.html" "$ROOT/skills/spotlight/kit/kit.js" "$dg/"; : > "$dg/fonts.css"
 ln -s "$t/node_modules" "$dg/node_modules"; $IM -size 64x64 xc:gray20 "$dg/bg.png"
 echo 'window.SPOTLIGHT = { width: 320, height: 568, duration: 2, grain: 0, shots: [ { a: 0, b: 2, still: "bg.png" } ] };' > "$dg/timeline.js"
 python3 - "$dg/scene.html" <<'PY'
 import sys; p = sys.argv[1]; s = open(p).read()
-d = '<div class="cap mid" data-a="0" data-b="2"><svg class="diagram" viewBox="0 0 300 100"><path id="p" d="M10 50 H290" data-at="0.5" data-dur="0.6"/><circle id="c" cx="290" cy="50" r="8" data-at="0.5"/></svg></div>'
+d = '<div class="cap mid" data-a="0" data-b="2"><svg class="diagram" viewBox="0 0 300 100"><path id="p" d="M10 50 H290" data-at="0.5" data-dur="0.6"/><path d="M10 90 C 10 10, 290 10, 290 90" data-at="0.3" data-dur="1"/><circle id="c" cx="290" cy="50" r="8" data-at="0.5"/></svg></div>'
 open(p, "w").write(s.replace('<div id="end">', d + '\n  <div id="end">'))
 PY
 out=$(cd "$dg" && node --input-type=module -e "
@@ -185,6 +197,9 @@ assert o0 == 0 and c0 == 0, "visible before data-at"
 assert o1 == 1 and 0.01 < d1 < 0.99, ("not drawing mid-way", o1, d1)
 assert abs(d2) < 1e-3 and c2 == 1, ("not whole after", d2, c2)
 PY
+(cd "$dg" && CAPTURE_WORKERS=1 node "$ROOT/skills/spotlight/scripts/capture.mjs" frames >/dev/null && (cd out && md5sum *.jpg) > serial.md5 \
+  && CAPTURE_WORKERS=3 node "$ROOT/skills/spotlight/scripts/capture.mjs" frames >/dev/null && (cd out && md5sum -c --quiet ../serial.md5)) \
+  || { echo "FAIL: parallel capture changed diagram pixels"; exit 1; }
 # kit behaviours from a stranger run: the scrim fades in (no one-frame snap), a dip transition goes through black at
 # the cut, SPOTLIGHT.draw(t) runs every frame, a web shot zooms about its origin, and text with data-at <= 0 is
 # already landed on frame 0

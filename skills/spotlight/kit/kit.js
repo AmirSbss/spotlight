@@ -25,8 +25,9 @@
 // Captions and the end card are DOM in scene.html: .cap[data-a][data-b], children [data-at]
 // (absolute seconds), data-scrim="top|bottom"; #end wipes in at SPOTLIGHT.end.
 // Charts sit inside a .cap: .chart[data-kind=bar|line|donut|number][data-at][data-dur] with data-values / data-labels
-// (JSON arrays) or data-value (number). Values are numbers or strings ("12,400", "30.5%", "۱۲٬۴۰۰"): a string is
-// shown exactly as given once the chart settles, and counts up in its own digits, separators and units.
+// (JSON arrays) or data-value (number). Values are numbers or strings ("12,400", "30.5%", "۱۲٬۴۰۰"), always shown
+// exactly as given: a bar's or a part's value fades in as it settles (no in-between numbers that aren't in the data);
+// a number counts up in its own digits, separators and units.
 // Diagrams sit inside a .cap too: <svg class="diagram">; its path/line/polyline elements with data-at draw in over
 // data-dur (default 0.6 s), and every other element with data-at fades in like a caption line.
 (() => {
@@ -164,6 +165,9 @@
     const kind = el.dataset.kind, labels = json(el, "labels");
     const vals = kind === "number" ? [numeric(el.dataset.value)] : json(el, "values").map(numeric);
     const max = +el.dataset.max || Math.max(...vals.map((v) => v.value), 1e-9);
+    const neg = (kind === "bar" || kind === "donut") && vals.find((v) => v.value < 0);
+    if (neg) throw new Error(`a ${kind} chart can't show ${neg.text}: bars and parts are sizes, so values must be >= 0 `
+                             + "(a line chart, a number card or a list can show it)");
     const c = { kind, vals, max, at: +el.dataset.at || 0, dur: +el.dataset.dur || 1 };
     if (kind === "bar") {
       c.cols = vals.map((v, i) => {
@@ -171,6 +175,7 @@
         const val = document.createElement("div"), lab = document.createElement("div");
         col.className = "col"; plot.className = "plot"; bar.className = "bar"; val.className = "val"; lab.className = "lab";
         lab.textContent = labels[i] ?? "";
+        val.textContent = v.text;
         plot.append(bar, val); col.append(plot, lab); el.append(col);
         return { bar, val };
       });
@@ -179,7 +184,8 @@
       const s = el.appendChild(svg("svg", { class: "plot" })), { width: w, height: h } = s.getBoundingClientRect();
       const k = Math.min(P.width, P.height) / 1080, n = vals.length, pad = 40 * k, top = 70 * k, bottom = h - 70 * k;
       s.setAttribute("viewBox", `0 0 ${w} ${h}`);
-      c.pts = vals.map((v, i) => [n > 1 ? pad + ((w - 2 * pad) * i) / (n - 1) : w / 2, bottom - (v.value / max) * (bottom - top)]);
+      const lo = Math.min(0, ...vals.map((v) => v.value));  // negatives (a loss, a temperature) sit under the zero line
+      c.pts = vals.map((v, i) => [n > 1 ? pad + ((w - 2 * pad) * i) / (n - 1) : w / 2, bottom - ((v.value - lo) / (max - lo)) * (bottom - top)]);
       c.line = s.appendChild(svg("polyline", { class: "ln", points: c.pts.map((p) => p.join(",")).join(" "), pathLength: 1 }));
       c.dots = c.pts.map(([x, y]) => s.appendChild(svg("circle", { class: "dot", cx: x, cy: y, r: 9 * k })));
       c.texts = c.pts.map(([x, y]) => s.appendChild(svg("text", { class: "val", x, y: y - 24 * k, "text-anchor": "middle" })));
@@ -189,8 +195,7 @@
       c.C = 2 * Math.PI * 78;
       let start = 0;
       c.segs = vals.map((v, i) => {
-        const len = (v.value / total) * c.C, seg = s.appendChild(svg("circle", {
-          class: `seg s${i % 5}`, cx: 100, cy: 100, r: 78, "stroke-dasharray": `0 ${c.C}`, transform: "rotate(-90 100 100)" }));
+        const len = (v.value / total) * c.C, seg = s.appendChild(svg("path", { class: `seg s${i % 5}`, d: "" }));
         const out = { seg, start, len };
         start += len;
         return out;
@@ -201,6 +206,7 @@
         const row = legend.appendChild(document.createElement("div"));
         row.innerHTML = `<i class="s${i % 5}"></i><span class="lab"></span><b class="val"></b>`;
         row.querySelector(".lab").textContent = labels[i] ?? "";
+        row.querySelector(".val").textContent = v.text;
         return row.querySelector(".val");
       });
       el.append(s, legend);
@@ -209,14 +215,13 @@
   }
   function drawChart(el, t) {
     const c = charts.get(el), q = (delay = 0) => outCubic(clamp((t - c.at - delay) / c.dur));
-    const show = (v, k) => (k >= 1 ? v.text : v.fmt(v.value * k));
-    if (c.kind === "number") el.textContent = show(c.vals[0], q());
+    const settle = (k) => clamp((k - 0.6) / 0.4);  // a value fades in over the last stretch of its part's growth
+    if (c.kind === "number") { const k = q(), v = c.vals[0]; el.textContent = k >= 1 ? v.text : v.fmt(v.value * k); }
     if (c.kind === "bar") c.cols.forEach(({ bar, val }, i) => {
       const k = q(0.1 * i), h = (c.vals[i].value / c.max) * 100 * k;
       bar.style.height = `${h}%`;
       val.style.bottom = `${h}%`;
-      val.textContent = show(c.vals[i], k);
-      val.style.opacity = k > 0 ? 1 : 0;
+      val.style.opacity = settle(k);
     });
     if (c.kind === "line") {
       const k = q();
@@ -232,9 +237,12 @@
       const k = q(), drawn = k * c.C;
       c.segs.forEach(({ seg, start, len }, i) => {
         const l = clamp(drawn - start, 0, len);
-        seg.setAttribute("stroke-dasharray", `${l} ${c.C}`);
-        seg.setAttribute("transform", `rotate(${-90 + (start / c.C) * 360} 100 100)`);
-        c.legend[i].textContent = show(c.vals[i], l / len || 0);
+        // an arc path rebuilt each frame (two halves, so a whole circle draws too): Chromium under-repaints a changing
+        // stroke-dasharray, and a frame kept stale pixels from whichever frame its capture worker drew before
+        const a0 = (start / c.C) * 2 * Math.PI - Math.PI / 2, a1 = a0 + (l / c.C) * 2 * Math.PI;
+        const pt = (a) => `${(100 + 78 * Math.cos(a)).toFixed(3)} ${(100 + 78 * Math.sin(a)).toFixed(3)}`;
+        seg.setAttribute("d", l > 0 ? `M${pt(a0)}A78 78 0 0 1 ${pt((a0 + a1) / 2)}A78 78 0 0 1 ${pt(a1)}` : "");
+        c.legend[i].style.opacity = settle(len ? l / len : k);
       });
     }
   }
