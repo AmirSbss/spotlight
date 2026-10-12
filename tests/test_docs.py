@@ -28,7 +28,7 @@ def main():
     for script in set(re.findall(r"scripts/([a-z]+\.(?:mjs|py|sh))", every)):
         assert (SK / "scripts" / script).exists(), f"missing scripts/{script}"
     kit = (SK / "kit/kit.js").read_text()
-    for field in ("clip", "still", "web", "scroll", "panel", "push", "origin", "filter", "drift", "grade", "grain"):
+    for field in ("clip", "still", "web", "scroll", "panel", "push", "origin", "filter", "drift", "grade", "grain", "dip", "draw"):
         assert re.search(rf"\b{field}\b", kit), f"kit.js doesn't document {field}"
         assert f"`{field}`" in every or f"{field}:" in every, f"the skill never explains {field}"
     for out in ("video.mp4", "poster.jpg", "caption.txt", "plan.md", "sources.md", "spotlight-output"):

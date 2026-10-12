@@ -185,4 +185,41 @@ assert o0 == 0 and c0 == 0, "visible before data-at"
 assert o1 == 1 and 0.01 < d1 < 0.99, ("not drawing mid-way", o1, d1)
 assert abs(d2) < 1e-3 and c2 == 1, ("not whole after", d2, c2)
 PY
+# kit behaviours from a stranger run: the scrim fades in (no one-frame snap), a dip transition goes through black at
+# the cut, SPOTLIGHT.draw(t) runs every frame, a web shot zooms about its origin, and text with data-at <= 0 is
+# already landed on frame 0
+kb="$t/kitbits"; mkdir -p "$kb"; cp "$ROOT/skills/spotlight/kit/scene.html" "$ROOT/skills/spotlight/kit/kit.js" "$kb/"; : > "$kb/fonts.css"
+ln -s "$t/node_modules" "$kb/node_modules"; $IM -size 64x64 xc:red "$kb/red.png"; $IM -size 64x64 xc:blue "$kb/blue.png"; $IM -size 320x1200 xc:gray50 "$kb/page.png"
+cat > "$kb/timeline.js" <<'JS'
+window.SPOTLIGHT = { width: 320, height: 568, duration: 3, grain: 0,
+  shots: [ { a: 0, b: 1, still: "red.png" }, { a: 1, b: 2, still: "blue.png", dip: 0.4 }, { a: 2, b: 3, web: "page.png", scroll: [0, 200], push: [1, 1.2], origin: "0% 50%" } ],
+  draw: (t) => { document.getElementById("cursor").style.left = `${t * 100}px`; } };
+JS
+python3 - "$kb/scene.html" <<'PY'
+import sys; p = sys.argv[1]; s = open(p).read()
+html = ('<div id="cursor" style="position:absolute;top:0;width:4px;height:4px"></div>'
+        '<div class="cap high" data-a="0" data-b="0.9"><div class="line"><span class="ln" id="first" data-at="0">Hook</span></div></div>'
+        '<div class="cap low" data-a="1" data-b="2.9" data-scrim="bottom"><div class="line"><span class="ln" data-at="1.05">Later</span></div></div>')
+open(p, "w").write(s.replace('<div id="end">', html + '\n  <div id="end">'))
+PY
+out=$(cd "$kb" && node --input-type=module -e "
+  import { launch } from '$ROOT/skills/spotlight/scripts/browser.mjs';
+  import { pathToFileURL } from 'node:url';
+  const b = await launch(), p = await b.newPage({ viewport: { width: 320, height: 568 } });
+  p.on('pageerror', (e) => console.log('PAGEERROR', e.message));
+  await p.goto(pathToFileURL(process.cwd() + '/scene.html').href); await p.evaluate(() => window.ready);
+  const at = (t) => p.evaluate(async (t) => { await window.render(t); const g = (s) => document.querySelector(s);
+    return { scrim: +g('#scrim-bottom').style.opacity, dip: +getComputedStyle(g('#dip')).opacity, cursor: g('#cursor').style.left,
+             first: +g('#first').style.opacity, origin: g('#web').style.transformOrigin }; }, t);
+  console.log(JSON.stringify([await at(0), await at(1.0), await at(1.3), await at(2.5)])); await b.close();")
+python3 - "$out" <<'PY' || { echo "FAIL: kit behaviours $out"; exit 1; }
+import json, sys
+f0, f1, f2, f3 = json.loads(sys.argv[1].splitlines()[-1])
+assert f0["first"] == 1, "data-at=0 text not landed on frame 0"
+assert f0["dip"] == 0, "a dip shows on frame 0"
+assert 0.05 < f1["scrim"] < 0.95, ("scrim snapped on", f1["scrim"])
+assert f1["dip"] > 0.95 and f2["dip"] < 0.05, ("dip not centred on the cut", f1["dip"], f2["dip"])
+assert f3["cursor"] == "250px", ("draw(t) not called", f3["cursor"])
+assert f3["origin"].startswith("0%"), ("web shot ignores origin", f3["origin"])
+PY
 echo "kit: ok"

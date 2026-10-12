@@ -18,6 +18,10 @@
 //   filter: "blur(16px) brightness(.42)"   CSS filter (e.g. a dimmed background behind a text card)
 //   grade: "saturate(.9) contrast(1.05)"   colour match for AI stills and photos next to footage
 //   grain: 0.12            film grain for this shot (SPOTLIGHT.grain sets it for every shot)
+//   dip: 0.3               a transition into this shot: a dip through black (or dipColor: "#E4B53B") over 0.3 s
+//                          centred on the cut, so two busy shots never cross-dissolve into mud
+// SPOTLIGHT.draw = (t) => { ... }   anything custom (a cursor, typing, a toggle), called every frame after the kit;
+//                          it must be a pure function of t too
 // Captions and the end card are DOM in scene.html: .cap[data-a][data-b], children [data-at]
 // (absolute seconds), data-scrim="top|bottom"; #end wipes in at SPOTLIGHT.end.
 // Charts sit inside a .cap: .chart[data-kind=bar|line|donut|number][data-at][data-dur] with data-values / data-labels
@@ -90,10 +94,12 @@
       // the real page, scrolled: drawn at the output width, moving from scroll[0] to scroll[1] (output px)
       await show(web, src);
       const [y0, y1] = s.scroll || [0, 0], y = y0 + (y1 - y0) * m;
-      // push zooms around the visible middle of the page; filter and grade work as on any other shot
+      // push zooms around `origin` within the visible part of the page (default its middle); filter and grade work
+      // as on any other shot
+      const [ox = "50%", oy = "50%"] = (s.origin || "").split(/\s+/).filter(Boolean);
       Object.assign(web.style, {
         opacity: 1, filter: [s.filter, s.grade].filter(Boolean).join(" ") || "none",
-        transformOrigin: `50% ${y + P.height / 2}px`, transform: `translateY(${-y}px) scale(${scale})`,
+        transformOrigin: `${ox} ${y + (parseFloat(oy) / 100) * P.height}px`, transform: `translateY(${-y}px) scale(${scale})`,
       });
       foot.style.opacity = 0;
       panel.style.opacity = 0;
@@ -116,6 +122,14 @@
         transformOrigin: s.origin || "50% 50%", transform: `translateX(${dx}%) scale(${scale})`,
       });
     }
+    // a dip through a colour, centred on the cut into a shot that asks for one (never on frame 0)
+    let dip = 0, dipColor = "#000";
+    for (const x of P.shots) {
+      if (!x.dip || x.a <= 0) continue;
+      const k = 1 - Math.abs(t - x.a) / (x.dip / 2);
+      if (k > dip) [dip, dipColor] = [k, x.dipColor || "#000"];
+    }
+    Object.assign($("#dip").style, { opacity: clamp(dip), background: dipColor });
     // grain moves every frame but is still a function of t
     const f = Math.floor(t * FPS + 1e-6);
     grain.style.opacity = s.grain ?? P.grain ?? 0;
@@ -228,6 +242,11 @@
   function animate(el, t) {
     for (const x of el.querySelectorAll("[data-at]")) {
       if (charts.has(x)) drawChart(x, t);
+      if (+x.dataset.at <= 0 && !x.matches(".diagram *")) {  // text meant for frame 0 is already landed there
+        x.style.opacity = 1;
+        x.style.transform = "none";
+        continue;
+      }
       if (x.matches(".diagram :is(path, line, polyline)")) {
         const q = outCubic(ramp(t, +x.dataset.at, +x.dataset.at + (+x.dataset.dur || 0.6)));
         x.style.opacity = q > 0 ? 1 : 0;
@@ -246,12 +265,14 @@
     for (const el of document.querySelectorAll(".cap[data-a]")) {
       const a = +el.dataset.a, b = +el.dataset.b;
       const live = t >= a - 0.05 ? 1 - ramp(t, b - 0.25, b) : 0;
+      // the scrim fades in as it fades out (a one-frame snap reads as a flash); a caption on frame 0 has it already
+      const shade = a <= 0 ? live : Math.min(live, ramp(t, a - 0.05, a + 0.25));
       el.style.opacity = live;
       const rule = el.querySelector(".rule");
       if (rule) rule.style.width = `calc(${outCubic(ramp(t, a, a + 0.55)) * 120}px * var(--k))`;
       animate(el, t);
-      if (el.dataset.scrim === "top") top = Math.max(top, live);
-      if (el.dataset.scrim === "bottom") bottom = Math.max(bottom, live);
+      if (el.dataset.scrim === "top") top = Math.max(top, shade);
+      if (el.dataset.scrim === "bottom") bottom = Math.max(bottom, shade);
     }
     $("#scrim-top").style.opacity = top;
     $("#scrim-bottom").style.opacity = bottom;
@@ -271,6 +292,7 @@
     await drawShot(t);
     drawCaptions(t);
     drawEnd(t);
+    if (P.draw) await P.draw(t);
   };
 
   window.ready = (async () => {
