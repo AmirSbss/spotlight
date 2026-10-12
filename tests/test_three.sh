@@ -70,6 +70,18 @@ for c in "51.47, -0.45" "-51.47, 179.55"; do
   fi
 done
 
+# extrude: the fixture logo (an amber circle) fills the centre from the first frame, turns, and captures identically
+e="$t/extrude"
+page "$e" 'window.SPOTLIGHT = { width: 320, height: 568, duration: 2, grain: 0, shots: [ { a: 0, b: 2, three: "three/extrude.js", params: { svg: "logo.svg" } } ] };'
+cp "$ROOT/tests/fixtures/site/logo.svg" "$e/"
+(cd "$e" && CAPTURE_WORKERS=1 node "$ROOT/skills/spotlight/scripts/capture.mjs" frames >/dev/null) || fail "extrude capture failed"
+read -r r g b <<< "$(px "$e/out/00000.jpg" 160 284)"; (( r > 150 && g > 90 && b < 90 )) || fail "extruded logo not in the centre at frame 0 ($r $g $b)"
+ae=$($CMP -metric AE -fuzz 3% "$e/out/00000.jpg" "$e/out/00059.jpg" null: 2>&1 | cut -d' ' -f1) || true
+(( ${ae%.*} > 300 )) || fail "the extruded logo doesn't move ($ae px changed)"
+(cd "$e/out" && md5sum *.jpg) > "$t/extrude.md5"
+(cd "$e" && CAPTURE_WORKERS=3 node "$ROOT/skills/spotlight/scripts/capture.mjs" frames >/dev/null)
+(cd "$e/out" && md5sum -c --quiet "$t/extrude.md5") || fail "parallel extrude capture changed pixels"
+
 # a bad module path is a loud error naming the path
 x="$t/bad"
 page "$x" 'window.SPOTLIGHT = { width: 320, height: 568, duration: 1, shots: [ { a: 0, b: 1, three: "three/nope.js" } ] };'
