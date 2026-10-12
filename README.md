@@ -76,6 +76,7 @@ The agent handles the creative side. It writes a brief and a shot plan, then bui
 - `footage.py` turns any photo or clip into upright, sRGB, frame-exact material. It copes with HEIC, HDR, rotated phone video and odd frame rates, encodes the final video, and checks it for frozen stretches, loudness, true peak and frame count. The check also writes a contact sheet with timestamps.
 - `site.mjs` captures a website's copy, colours, fonts, logo, screens and a full-page image. It has a hard time limit, so endless feeds and stalled servers can't hang the run.
 - `capture.mjs` renders frames in parallel, and the result matches a single-threaded render pixel for pixel.
+- The render kit draws charts (bar, line, donut, a counting number) straight from your data, diagrams whose lines draw in, and 3D scenes: a dotted globe or map with routes between real places, and an extruded logo. Every number on a chart is the exact string from your file.
 - `mix.py` mixes the music, sound effects, live sound from your clips and narration. It levels the music, ducks it under the voice and sets each effect's gain so it's heard over the music in its own frequency band. A bundled CC0 library (five moods of music and 18 effects) is used when you don't bring a track.
 - `voice.py` reads narration aloud with [Piper](https://github.com/OHF-Voice/piper1-gpl), locally, using only voices whose licences allow commercial use.
 
@@ -114,14 +115,14 @@ You need ffmpeg 4.4 or newer with the zscale filter, ImageMagick 6 or 7, Python 
 
 ## Status
 
-Phases 1 and 2 of 4 are done: the three modes, website capture, the check and the critic loop, then sound: a bundled CC0 music and sound-effects library, levelled effects and optional local narration. Phase 3 brings charts, diagrams and 3D scenes, and phase 4 more demos. The design and the plans live in [docs/superpowers](docs/superpowers).
+Phases 1 to 3 of 4 are done: the three modes, website capture, the check and the critic loop; sound (a bundled CC0 music and sound-effects library, levelled effects and optional local narration); and visuals (charts, diagrams, a routes globe and an extruded logo). Phase 4 brings more demos. The design and the plans live in [docs/superpowers](docs/superpowers).
 
 ## Tests
 
 ```bash
 python3 tests/test_footage.py && python3 tests/test_check.py && python3 tests/test_docs.py && python3 tests/test_assets.py
 uv run --project skills/spotlight/scripts python tests/test_mix.py
-bash tests/test_capture.sh && bash tests/test_kit.sh && bash tests/test_site.sh
+bash tests/test_capture.sh && bash tests/test_kit.sh && bash tests/test_site.sh && bash tests/test_three.sh
 bash tests/test_doctor.sh && bash tests/test_bridge_image.sh && bash tests/test_voice.sh
 ```
 

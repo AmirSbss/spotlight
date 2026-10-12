@@ -16,6 +16,7 @@ Hook (2–3 s) → reveal (2–4 s) → 2–3 sharp highlights → punchline / C
 - **Make it alive.** Things that appear one by one, simulated clicks, swipes and typing beat static slides.
 - **Funny earns its place.** Humour comes from the project's own absurdity.
 - **No generic SaaS language** ("streamline your workflow" is banned).
+- **3D sparingly.** An extruded logo (`three/extrude.js`, `references/visuals.md`) can carry the last beat before the end card when the project has an SVG logo, at most once. A product that moves things between places can show it on `three/routes.js`.
 
 ## Tones
 | Tone | Feel | Pacing / transitions |

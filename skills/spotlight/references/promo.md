@@ -35,6 +35,8 @@ Presets are defaults. A freeform direction ("90s VHS travel ad") refines or over
 | `recap` | Event highlights building to a peak | Many short shots, rough chronology; crowd sound up at the peak |
 | `cinematic` | Trailer-scale | Wide shots, big type, dramatic wipes |
 
+Where the offer is about places (a travel agency's routes, a delivery area, branches), a routes globe or map (`three/routes.js`, `references/visuals.md`) can carry one beat between footage shots.
+
 ## Footage
 
 - **Clips:** `python3 $F shot <clip> <start_s> <dur_s> <W>x<H> <cx> work/frames/<shot>/` writes exactly round(dur×30) upright JPGs (`00001.jpg`…), HDR tone-mapped to SDR, scaled to cover the frame and cropped at horizontal position `cx` (0 = left, 0.5 = center, 1 = right). Pick `cx` per shot so the subject stays in frame when landscape footage goes vertical. The manifest's `cuts` lists the hard cuts inside each clip; keep shots from straddling them. Start shots on stable, sharp moments.

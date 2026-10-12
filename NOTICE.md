@@ -5,6 +5,8 @@
 | brag (latent-spaces/brag): creative rules, music-cue analyser | `skills/spotlight/scripts/analyze_music_cues.py`, `references/brag.md` | MIT |
 | motion-video-kit (echris6/motion-video-kit): critic loop, quality bar, frozen-time measurement approach, SFX gain solver and offline mix | `references/critic.md`, `references/quality-bar.md`, `footage.py check`, `scripts/mix.py` | MIT |
 | gpt-image-bridge (oakplank/gpt-image-bridge): optional, not bundled | used only if installed | MIT |
+| three.js 0.170.0 (mrdoob/three.js): `three.module.min.js` and the `SVGLoader` addon | `skills/spotlight/kit/three/` (licence in `LICENSE` there) | MIT |
+| Natural Earth 1:110m land (naturalearthdata.com, v5.1.2), baked into land dots | `skills/spotlight/kit/three/land-dots.js` | Public domain |
 | "Montage" by wipics ([OpenGameArt](https://opengameart.org/content/montage)): music, 17.47 to 42.47 s | `examples/demo/video.mp4` (audio only; the track itself isn't in the repo) | CC0 |
 | Space Grotesk, Inter, JetBrains Mono (Google Fonts) | rendered into `examples/demo/video.mp4` | SIL OFL 1.1 |
 

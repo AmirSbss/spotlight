@@ -67,6 +67,16 @@ def main():
     assert "voice.py" in sound and "durations.json" in sound and "lines.json" in sound
     for lang in re.findall(r'^\s+"([a-z]{2})": "', voice, re.M):
         assert f"`{lang}`" in sound, f"sound.md's voice table misses {lang}"
+    # P3: charts, diagrams and 3D are documented where the agent reads them, and every module named exists
+    assert "visuals.md" in refs, "references/visuals.md is missing"
+    vis = refs["visuals.md"]
+    for kind in ("bar", "line", "donut", "number"):
+        assert f"`{kind}`" in vis and kind in kit, f"chart kind {kind} undocumented or missing from kit.js"
+    for word in ("three", "params", "data-anchor", "diagram"):
+        assert word in kit and word in every, f"{word} undocumented"
+    for mod in set(re.findall(r"three/([a-z-]+\.js)", every)):
+        assert (SK / "kit/three" / mod).exists(), f"docs name kit/three/{mod}, which doesn't exist"
+    assert "phase 3" not in every.lower(), "a doc still says phase 3 is coming"
     print("docs: all checks passed")
 
 
