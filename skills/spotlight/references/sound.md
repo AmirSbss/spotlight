@@ -8,12 +8,12 @@ The first run downloads its Python packages into uv's cache (about a minute); no
 
 The user's track always wins (`--music <file>`, or an audio file in the inputs). `--music none` renders a silent track. Otherwise, pick one bundled track by what the buyer's *customers* would want to hear, not by "tech launch":
 
-Take the track for the tone; switch only when the customers clearly expect something else (a café launch is warm, not techno):
+Take the track for the tone; switch only when the customers clearly expect something else (a café launch is warm, not techno). The tone decides, not the subject: an explainer about a developer tool in `clear` still takes `calm.mp3`.
 
 | Tone | Track |
 |---|---|
 | brag `default`, `chaotic`, `app-store`; promo `energetic`, `recap` | `assets/music/upbeat.mp3` |
-| brag `polished`, `yc-parody`; explain `keynote`; any software or developer product | `assets/music/minimal-tech.mp3` |
+| brag `polished`, `yc-parody`; explain `keynote`; promo `default` for software or a developer product | `assets/music/minimal-tech.mp3` |
 | promo `default` (cafés, shops, people, services) | `assets/music/warm-acoustic.mp3` |
 | brag `deadpan`; promo `premium`; explain `clear` | `assets/music/calm.mp3` |
 | brag and promo `cinematic`; explain `documentary` | `assets/music/cinematic.mp3` |
@@ -78,8 +78,8 @@ Add a clip's own sound only where it helps: a crowd, an espresso machine, a laug
 
 Narration is off unless asked for, and the captions stay on screen either way. It suits `explain` best.
 1. Right after the plan, write `work/lines.json`: `[{"id": "s1", "text": "…", "lang": "en"}, …]`, one entry per sentence or beat, with the text exactly as it should be spoken. Write numbers, years, prices and abbreviations the way they're said. Spell Latin brand names inside Persian or Arabic text in that script, as they're pronounced: Piper reads Latin words in those languages badly.
-2. Run `python3 <skill-dir>/scripts/voice.py lines.json` → `voice/<id>.wav` (levelled to −16 LUFS) and `durations.json`. The first use of a voice downloads it, 60–115 MB, into `~/.cache/spotlight/piper/`. It exits 2 with the install command when Piper is missing: tell the user, and render without narration.
-3. Time the shots to the lines: each beat lasts at least its line's duration plus about 0.3 s, and lines never overlap. A caption that carries the same sentence lands with its line.
+2. Run `python3 <skill-dir>/scripts/voice.py lines.json` → `voice/<id>.wav` (levelled to −16 LUFS) and `durations.json`. The first use of a voice downloads it, 60–115 MB, into `~/.cache/spotlight/piper/`. Piper never says a line the same way twice (a new take moves its length and pauses by up to 0.3 s), so a re-run speaks only the lines whose text or voice changed and keeps the other takes; delete `voice/<id>.wav` to force a new take of one line. It exits 2 with the install command when Piper is missing: tell the user, and render without narration.
+3. Time the shots to the lines: each beat lasts at least its line's duration plus about 0.3 s, and lines never overlap. A caption that carries the same sentence lands with its line. Each wav starts on its first syllable and ends on its last. To land a bar, a row or a node on a word inside a line, split the line there, or find the line's pauses with `ffmpeg -i voice/<id>.wav -af silencedetect=n=-35dB:d=0.12 -f null -`.
 4. Add each line to `mix.json` as `{"file": "voice/<id>.wav", "t": <s>}`. The music ducks under it on its own.
 5. If `voice.py` prints a `credit` line, put it in `sources.md` and `caption.txt`.
 
@@ -114,10 +114,12 @@ Paths are relative to `mix.json` (so `voice/s1.wav` works) or absolute (bundled 
 ```
 
 `duration` is the video's length (`duration` in `timeline.js`). Read `mix-report.txt` after every run, and fix the timing and re-run if any of these fails:
-- every effect says `target`, `hf cap`, `peak cap` or `floor`, and none says `skipped` (the numbers are in-band peaks over the music, not loudness);
+- no effect says `skipped`;
 - there is no `music runs out` line;
 - no voice line `runs past the end`.
 
+An effect's line reads `gain -16.2 dB  in-band peak +9.6 dB (floor -22.0 dBFS: the music is quiet here); 2729-10917 Hz, 150 ms body  hf +7.3 dB  peak -9.2 dB`. Every dB after the gain compares the effect's peak with the music's in the same 150 ms: in the effect's own band (`in-band peak`), in 2–8 kHz (`hf`) and across all frequencies (`peak`). The bracket says what set the gain: `target`, `hf cap`, `peak cap`, or `floor`, a fixed level in dBFS that takes over where the music is quiet in that band (under narration, or in a calm track). Effects at `floor` are normal and audible, and their numbers over the music run high because the music is quiet there.
+
 ## Deliver
 
-`mix.wav` goes into `video.mp4`. When the mix has effects or narration, also encode `music-only.wav` into `music-only.mp4`, with the same frames and poster. That is the version for a platform where the user adds their own sound or voice.
+`mix.wav` goes into `video.mp4`. When the mix has effects or narration, also encode `music-only.wav` into `music-only.mp4`, with the same frames and poster. That is the version for a platform where the user adds their own sound or voice, so its music isn't ducked.

@@ -11,7 +11,7 @@ A video ships only when these hold. `footage.py check` measures the first block;
 
 ## Visual
 - Frame 0 is a finished composition (never a half-entered word).
-- No empty frames, no text collisions (also mid-transition), no captions over signage, logos or faces.
+- No empty frames (a `dip`'s one dark frame on the cut is a transition, not an empty frame), no text collisions (also mid-transition), no captions over signage, logos or faces.
 - Lists: equal spacing, aligned left edges (right edges in RTL).
 - The lead subject fills most of the frame in feature shots; crop with `cx` or use `panel` for other-aspect media.
 - Openers are bright and clear unless the brand says otherwise.

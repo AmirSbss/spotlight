@@ -41,10 +41,10 @@ Inputs mix freely: a promo can quote the brand's site, an explainer can use foot
 - **Data:** read `*.csv` / `*.json` inputs; numbers on screen come only from them.
 
 ## 2. Brief → `work/brief.md`
-What it is, who it's for, the one message, the one action (CTA), the facts you'll show **with their source** (brief, site page, footage file, data file), and the don'ts. If the name, the CTA or the language is still unknown, ask **one** question listing everything missing; if nobody can answer (a headless run), decide the most sensible answer and say so in your report. Never guess a phone number, a price or an address. Only public addresses go on screen: never `localhost`, `127.0.0.1`, a LAN address or a file path. With no public URL, end on the name and the action.
+What it is, who it's for, the one message, the one action (CTA), the facts you'll show **with their source** (brief, site page, footage file, data file), and the don'ts. If the name, the CTA or the language is still unknown, ask **one** question listing everything missing; if nobody can answer (a headless run), decide the most sensible answer and say so in your report. Never guess a phone number, a price or an address. Only public addresses go on screen: never `localhost`, `127.0.0.1`, a LAN address or a file path. Data and log files often hold local paths (`"file": "/home/…"`), so quote only the keys you cite. With no public URL, end on the name and the action.
 
 ## 3. Plan → `plan.md`
-The angle, the hook, and a shot or section list. Each entry has its source (copy the path from the manifest or site files), in/out points or motion, its on-screen text (verbatim from the sources), its duration and its transition. Add the music (track and window) and the cue times you'll cut on, the effects (time → file → why, unless `--no-sfx`), with `--voice` the narration lines, plus the AI assets table. With `--voice`, run `voice.py` right after the plan (`references/sound.md`): the line durations set the shot timing. Durations must add up to the target. Write `sources.md` alongside: every line of on-screen text and every number → where it came from, plus the AI ledger (file, prompt, purpose, shot).
+The angle, the hook, and a shot or section list. Each entry has its source (copy the path from the manifest or site files), in/out points or motion, its on-screen text (verbatim from the sources; the hook question, chapter cards and CTA are yours to write, each listed in `sources.md` with the claim it stands for), its duration and its transition. Add the music (track and window) and the cue times you'll cut on, the effects (time → file → why, unless `--no-sfx`), with `--voice` the narration lines, plus the AI assets table. With `--voice`, run `voice.py` right after the plan (`references/sound.md`): the line durations set the shot timing. Durations must add up to the target. Write `sources.md` alongside: every line of on-screen text and every number → where it came from, plus the AI ledger (file, prompt, purpose, shot).
 
 ## 4. Build
 ### The page
@@ -54,7 +54,7 @@ Start from the kit: copy `<skill-dir>/kit/scene.html` and `<skill-dir>/kit/kit.j
 - charts (`.chart`), diagrams (`svg.diagram`) and 3D shots (`three: "three/routes.js"` or `"three/extrude.js"`, with `params`; copy `<skill-dir>/kit/three/` to `work/three/`) are described in `references/visuals.md`;
 - put the `@font-face` rules for the downloaded woff2 files in `work/fonts.css` (the template links it; a missing file fails the capture);
 - anything custom (a cursor that clicks, a line being typed, a toggle) goes in `scene.html`, driven from t by a `draw` function in `timeline.js` (`SPOTLIGHT.draw = (t) => { … }`), which the kit calls every frame;
-- put the captions and the end card in `scene.html`: `.cap.low|.high|.mid` with `data-a`/`data-b` (on screen from/to), each line a `[data-at]` element (when it lands; `data-at="0"` or less is already landed on frame 0, which suits the hook), `data-scrim="top|bottom"`. Set the brand tokens (`--ink`, `--paper`, `--accent`, fonts) in `:root`.
+- put the captions and the end card in `scene.html`: `.cap.low|.high|.mid` with `data-a`/`data-b` (on screen from/to), each line a `[data-at]` element (when it lands; `data-at="0"` or less is already landed on frame 0, which suits the hook), `data-scrim="top|bottom"`. A caption fades out over its last 0.25 s and each line fades in over 0.4 s, so on a hard cut land the next caption's first line on the cut (or `dip`), or the frames around the cut carry no text; a caption is readable until `data-b` − 0.25. Set the brand tokens (`--ink`, `--paper`, `--accent`, fonts) in `:root`, and add your own CSS at the marked end of the `<style>` block (earlier rules lose to the template's).
 The kit keeps every frame a pure function of t, looks up clip frames with the rounding fix (`floor((t - a) * 30 + 1e-6) + 1`), and scales type and safe zones to the format. So the same timeline renders vertical, landscape or square: change `width`/`height` and re-cut the clip frames at the new size. Anything custom you add must also be a pure function of t: no timers, and no CSS transitions or animations of its own.
 
 Capture with the bundled script, run from `work/` after `npm i --prefix . playwright-core`:
@@ -97,7 +97,7 @@ Follow `references/sound.md`: pick the music (the user's track, else a bundled o
 ## 6. Capture, encode, check
 ### Check before the full render
 
-The first full capture and encode is the draft (20 s takes about a minute): run `python3 $F check draft.mp4 --end-card <s> --out draft-check` on it, and fix every hold it lists before the final render. Capture stills (`capture.mjs stills …`) in the middle of every shot, at every transition, and on the first frame after every cut (clips that were already edited hide dissolves, blurs and light leaks there), and look at them:
+The first full capture and encode is the draft (20 s takes about a minute): run `python3 $F check draft.mp4 --end-card <s> --out draft-check` on it, and fix every hold it lists before the final render. If the draft needs no fixes, its frames are the final ones: encode `out/` again with `--poster` instead of capturing again. Capture stills (`capture.mjs stills …`) in the middle of every shot, at every transition, and on the first frame after every cut (clips that were already edited hide dissolves, blurs and light leaks there), and look at them:
 - Upright?
 - HDR clips not washed out?
 - Text joined and running in the right direction, numbers not reversed?
@@ -110,7 +110,7 @@ A plain crossfade between two busy shots makes a muddy double exposure: dip thro
 
 Pick the poster frame first (see Deliver) and copy the chosen `out/NNNNN.jpg` to `$OUT/poster.jpg`. Don't copy it over frame 0: a settled poster frame followed by the opening frames flashes for one frame at the start and on every loop. Then run `python3 $F encode out mix.wav $OUT/video.mp4 --poster $OUT/poster.jpg`. `--poster` embeds it as cover art, which players and file browsers show. Pass `none` instead of the wav for a silent track (a video with no audio track turns into a GIF on Telegram). With effects or narration in the mix, also run `python3 $F encode out music-only.wav $OUT/music-only.mp4 --poster $OUT/poster.jpg`.
 
-It writes BT.709-tagged H.264 yuv420p + AAC with `+faststart`, exactly frames/30 seconds long, loudness-normalized to −14 LUFS (two-pass, true peak under −1.5). It refuses a frame folder that mixes PNG and JPG, has gaps in its numbering, or has a file that isn't really the format its name says, and it checks the frame count of what it wrote.
+It writes BT.709-tagged H.264 yuv420p + AAC with `+faststart`, exactly frames/30 seconds long, at −14 LUFS: one fixed gain, then a true-peak limiter tuned on the AAC itself, so the true peak lands under −1.5 dBTP even with a narrator's plosives. It refuses a frame folder that mixes PNG and JPG, has gaps in its numbering, or has a file that isn't really the format its name says, and it checks the frame count of what it wrote.
 
 Then run `python3 $F check $OUT/video.mp4 --end-card <s> --out $OUT/work` and fix every failure and every hold it lists. `--end-card` is the end card's length (`duration` minus `end` in `timeline.js`), not the time it starts.
 
@@ -120,7 +120,7 @@ Follow `references/critic.md`: a fresh critic reviews the actual render, you fix
 ## 8. Deliver
 - **`poster.jpg`:** the strongest settled frame, embedded as cover art (`encode --poster`), never copied over frame 0.
 - **`caption.txt`:** in the video's language, 1–3 sentences plus the CTA, optional hashtags, and a short AI-illustration label if any AI image is used.
-- **`music-only.mp4`:** the same video over the music and live sound alone, when the mix has effects or narration.
+- **`music-only.mp4`:** the same video over the music and live sound alone (not ducked), when the mix has effects or narration.
 - **`plan.md`, `sources.md`, `work/`** stay.
 - **Tell the user:** where the files are, the angle in one sentence, the `check` numbers, the critic's verdict, and which shots are AI. Offer a re-cut, another tone or another format (re-using `work/`).
 

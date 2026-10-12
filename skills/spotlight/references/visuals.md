@@ -16,15 +16,15 @@ A chart lives inside a caption container (`.cap`), which sets when it's on scree
 
 | `data-kind` | Data | Motion |
 |---|---|---|
-| `bar` | `data-values` + `data-labels`, ≤ 6 bars | bars rise one after another, values count up |
-| `line` | `data-values` + `data-labels`, ≤ 12 points | the line draws left to right, values appear as it passes |
-| `donut` | `data-values` + `data-labels`, ≤ 5 parts | arcs sweep round, the legend counts up |
-| `number` | `data-value` (one) | counts up from zero |
+| `bar` | `data-values` + `data-labels`, ≤ 6 bars, values ≥ 0 | bars rise one after another; each value appears as its bar settles |
+| `line` | `data-values` + `data-labels`, ≤ 12 points, negatives allowed | the line draws left to right, values appear as it passes |
+| `donut` | `data-values` + `data-labels`, ≤ 5 parts, values ≥ 0 | arcs sweep round; each value appears as its part completes |
+| `number` | `data-value` (one) | counts up from zero and lands on the value |
 
-- **Values come from the data file exactly as written.** Write them as strings (`"12,400"`, `"30.5%"`, `"$1.2M"`, `"۱۲٬۴۰۰"`): once the chart settles, the string is shown verbatim, and while counting it keeps its own digits, separators, decimals and units. List every chart in `sources.md` with its file and rows.
+- **Values come from the data file exactly as written.** Write them as strings (`"12,400"`, `"30.5%"`, `"$1.2M"`, `"۱۲٬۴۰۰"`): bars, lines and donuts only ever show that string, and a `number` counts up in its own digits, separators, decimals and units before landing on it. Bars and donut parts are sizes, so a negative value stops the capture with an error: show it as a line, a number card or a list. List every chart in `sources.md` with its file and rows.
 - Bars share one scale: the largest value fills the plot (or set `data-max`). Put the label you want read first (the claim) in the kicker or `.sub`, not inside the chart.
-- Colours come from `--accent`, with tints for the other series. Type follows the scene's fonts and scales with the format. A chart is at most 1000 px × `--k` wide, so in landscape it leaves room beside it.
-- **Hold a settled chart** for at least 1.5 s, plus 0.3 s per word of its labels. Put it over a moving backdrop: a still with a `filter` (which pushes and drifts) or a blurred clip. A settled chart over a frozen frame measures as a hold.
+- Colours come from `--accent`, with tints for the other series. Type follows the scene's fonts and scales with the format. A chart is at most 1000 px × `--k` wide. In landscape, `.cap.left` or `.cap.right` keeps the caption and its chart to one half, and the other half shows the evidence (a scrolling file, footage).
+- **Hold a settled chart** for at least 1.5 s, plus 0.3 s per word of its labels. Put it over a moving backdrop: a still with a `filter` (which pushes and drifts) or a blurred clip. A settled chart over a frozen frame measures as a hold, and a critic calls a long settled hold a lull even over a moving backdrop: past the reading time, move something on the chart or diagram itself (a pulse along a path from `SPOTLIGHT.draw`) or cut. Captions fade out over their last 0.25 s, so count the hold up to `data-b` − 0.25.
 
 ## Diagrams
 
@@ -38,7 +38,7 @@ Use an inline SVG with class `diagram`, inside a `.cap`. Each `path`, `line` or 
 </svg></div>
 ```
 
-Restyle in `scene.html` (`.diagram rect { fill: … }`). Keep it to one idea, ≤ 6 nodes, with labels of ≤ 3 words.
+Nodes default to a dark tint of `--accent` with an accent outline and white labels; restyle in `scene.html` (`.diagram rect { fill: … }`). `text` is 22 units of the `viewBox`, so keep the viewBox about as wide as the diagram is on screen (≈ 900–1000), or set `font-size`. Draw an arrowhead as its own short `polyline` with a `data-at` just after its line's (a `marker-end` would show before its line has drawn). Keep it to one idea, ≤ 6 nodes, with labels of ≤ 3 words.
 
 ## 3D: `three` shots
 
