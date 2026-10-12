@@ -11,7 +11,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 A = ROOT / "skills/spotlight/assets"
 AUDIO = {".mp3", ".ogg", ".wav"}
-MOODS = {"calm", "warm-acoustic", "upbeat", "minimal-tech", "cinematic"}
+MOODS = {"calm", "warm", "upbeat", "minimal-tech", "cinematic"}
 KINDS = {"whoosh", "click", "pop", "chime"}  # the effects sound.md promises; more kinds may exist
 
 
@@ -22,7 +22,7 @@ def probe(f):
 
 
 def main():
-    for kind, budget in (("music", 30e6), ("sfx", 1.5e6)):
+    for kind, budget in (("music", 40e6), ("sfx", 1.5e6)):  # full-quality ende.app files, never re-encoded
         d = A / kind
         files = sorted(p for p in d.iterdir() if p.suffix in AUDIO)
         lic = (d / "LICENSES.md").read_text()
@@ -37,16 +37,16 @@ def main():
             assert [s["codec_type"] for s in streams] == ["audio"], f"{p.name}: not a single audio stream (cover art?)"
             assert dur > 0.04, p.name
             if kind == "music":
-                assert 60 <= dur <= 240, f"{p.name}: {dur:.0f}s"
+                assert 45 <= dur <= 240, f"{p.name}: {dur:.0f}s"  # a 56 s opener still covers a 25 s brag
                 cue = json.loads((d / "cues" / f"{p.stem}.json").read_text())
                 assert abs(cue["duration"] - dur) < 0.5 and len(cue["per_second"]) >= dur - 2, p.name
                 assert cue.get("tempo"), f"{p.name}: cue preset has no tempo (run footage.py track with uv on PATH)"
             else:
                 assert dur <= 3.0, f"{p.name}: {dur:.1f}s is long for an effect"
         if kind == "music":
-            # one track per mood under the mood's name, plus optional alternatives named <mood>-<n>
+            # one track per mood under the mood's name, plus optional alternatives named <mood>-<n or style>
             stems = {p.stem for p in files}
-            assert MOODS <= stems and all(re.fullmatch(r"(%s)(-\d+)?" % "|".join(MOODS), st) for st in stems), sorted(stems)
+            assert MOODS <= stems and all(re.fullmatch(r"(%s)(-[a-z0-9]+)?" % "|".join(MOODS), st) for st in stems), sorted(stems)
             # an explainer runs up to 180 s: at least one track must cover it from its start
             assert max(probe(p)[1] for p in files) >= 180, "no track long enough for a 180 s explainer"
         else:

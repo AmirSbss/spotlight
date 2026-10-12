@@ -12,13 +12,13 @@ Take the track for the tone; switch only when the customers clearly expect somet
 
 | Tone | Track |
 |---|---|
-| brag `default`, `chaotic`, `app-store`; promo `energetic`, `recap` | `assets/music/upbeat.mp3` (more in the same style: `upbeat-9`, `-12`, `-11`, `-10`) |
+| brag `default`, `chaotic`, `app-store`; promo `energetic`, `recap` | `assets/music/upbeat.mp3` (more in the same style: `upbeat-9`, `-12`, `-11`, `-10`; driving rock for a short opener: `upbeat-rock`) |
 | brag `polished`, `yc-parody`; explain `keynote`; promo `default` for software or a developer product | `assets/music/minimal-tech.mp3` |
-| promo `default` (cafés, shops, people, services) | `assets/music/warm-acoustic.mp3` |
+| promo `default` (cafés, shops, people, services) | `assets/music/warm.mp3` |
 | brag `deadpan`; promo `premium`; explain `clear` | `assets/music/calm.mp3` |
 | brag and promo `cinematic`; explain `documentary` | `assets/music/cinematic.mp3` |
 
-The `upbeat*` tracks are by Sascha Ende (ende.app), under CC BY 4.0: put "Music by Sascha Ende at ende.app" in `sources.md`, and in `caption.txt` when there's room. Never register a video's music with Content ID. The other tracks are CC0. `assets/music/LICENSES.md` has every file's source and licence.
+Every track except `minimal-tech.mp3` is by Sascha Ende (ende.app), under CC BY 4.0: put "Music by Sascha Ende at ende.app" in `sources.md`, and in `caption.txt` when there's room. Never register a video's music with Content ID. `minimal-tech.mp3` is CC0. `assets/music/LICENSES.md` has every file's source and licence.
 
 Measured shapes (track time). Start the window where the music already moves, unless the hook is meant to build into a lift:
 
@@ -29,10 +29,11 @@ Measured shapes (track time). Start the window where the music already moves, un
 | `upbeat-12.mp3` | ~110 BPM | 117 s | lighter start 0–10 s, builds to its fullest at 80–100 s; ends at 115 s | start ~70 s so the lift lands on the reveal |
 | `upbeat-11.mp3` | ~115 BPM | 88 s | even from the start; eases off in the last 10 s | a short alternative |
 | `upbeat-10.mp3` | ~110 BPM | 60 s | one even loop, start to end | for videos ≤ 55 s |
-| `minimal-tech.mp3` | ~120 BPM | 193 s | steady kick from the first second to 192 s | any start; the only track long enough for a 180 s explainer |
-| `warm-acoustic.mp3` | uncertain | 121 s | **stop-time intro 0–16 s** (a bar of sound, then a bar of near-silence); full band 16–111 s; soft outro 111–120 s | start at 16.0 s or later: never put the intro under a hook |
-| `calm.mp3` | ~99 BPM | 136 s | fades up from silence 0–18 s; steady groove 18–126 s; fades out 126–136 s | start at 18 s for movement from frame 0, or ~10 s so the groove lands 8 s in |
-| `cinematic.mp3` | uncertain | 114 s | soft 0–8 s, builds to ~32 s, fuller from ~50 s; stop-time ending 101–113 s | start at 0–8 s to build under a hook; end before 100 s |
+| `upbeat-rock.mp3` | 120 BPM | 56 s | guitar riff from 5 s; full 10–50 s; ends at 52 s | for an energetic opener ≤ 45 s; start at 5 s |
+| `minimal-tech.mp3` | ~120 BPM | 193 s | steady kick from the first second to 192 s | any start; long enough for a 180 s explainer, like `calm` and `cinematic` |
+| `warm.mp3` | ~96 BPM | 145 s | lighter intro 0–20 s; full 20–80 s; a softer stretch 80–100 s; full 100–130 s; eases out 130–140 s | start at 20 s or later (a strong cue every 2.54 s from 20.2 s) |
+| `calm.mp3` | ~110 BPM | 215 s | soft 0–30 s, building to full by 40 s; steady 40–190 s; eases out 190–210 s | start at 0–12 s to build under a hook, or at 40 s or later for a steady bed; covers a 180 s explainer |
+| `cinematic.mp3` | uncertain | 239 s | soft 0–20 s, builds to ~40 s, then swings between soft and full; fullest 170–200 s; eases out 200–235 s | start at 0–20 s to build under a hook, or ~150 s so the peak lands on the reveal |
 
 `assets/music/cues/<name>.json` holds each track's per-second loudness, tempo and strong cues (the output of `$F track --json`), so you can choose the window without measuring. For the user's own track, run `python3 $F track <file>`.
 - Start where the track already moves (a pulse even when chill), so frame 0 isn't a fade-in from nothing: use the table's "Use" column, then fine-tune with the cue file.
