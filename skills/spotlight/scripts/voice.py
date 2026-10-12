@@ -166,7 +166,7 @@ def main():
             for line in lines:
                 lid = line["id"]
                 name, speaker = pick(line)
-                key = hashlib.sha1(json.dumps([" ".join(str(line["text"]).split()), name, speaker, VOICE_LUFS]).encode()).hexdigest()
+                key = hashlib.sha1(json.dumps([" ".join(str(line["text"]).split()), name, speaker, VOICE_LUFS, REV]).encode()).hexdigest()
                 kept = takes.get(lid, {}).get("key") == key and (outdir / "voice" / f"{lid}.wav").exists()
                 durations[lid] = takes[lid]["dur"] if kept else speak(line, name, speaker, outdir, tmp)
                 takes[lid] = {"key": key, "dur": durations[lid]}
