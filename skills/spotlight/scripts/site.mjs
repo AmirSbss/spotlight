@@ -91,6 +91,8 @@ const data = await step("copy and brand", () => page.evaluate(() => {
   const accent = Object.entries(counts).sort((a, b) => b[1] - a[1])[0]?.[0] || null;
   const fonts = [...new Set([document.body, document.querySelector("h1"), document.querySelector("h2")].filter(Boolean)
     .map((e) => getComputedStyle(e).fontFamily))];
+  // the stacks above name what the CSS asks for; these are the web fonts the page really loaded
+  const loaded = [...new Set([...document.fonts].filter((f) => f.status === "loaded").map((f) => f.family.replace(/^["']|["']$/g, "")))];
   const logo = [...document.querySelectorAll("img")].find((i) => /logo/i.test(i.alt + i.className + i.src + (i.closest("header") ? " header" : "")))?.src
     || document.querySelector('link[rel*="icon"]')?.href || null;
   const images = [...document.images].filter((i) => i.naturalWidth >= 400).sort((a, b) => b.naturalWidth * b.naturalHeight - a.naturalWidth * a.naturalHeight)
@@ -103,7 +105,7 @@ const data = await step("copy and brand", () => page.evaluate(() => {
       paragraphs: [...document.querySelectorAll("p")].map(txt).filter(Boolean).slice(0, 40),
       ctas, nav: [...document.querySelectorAll("nav a")].map((a) => ({ text: txt(a), href: a.getAttribute("href") || "" })),
     },
-    brand: { background: bodyBg, text: hex(getComputedStyle(document.body).color), accent, fonts, logo, images },
+    brand: { background: bodyBg, text: hex(getComputedStyle(document.body).color), accent, fonts, fonts_loaded: loaded, logo, images },
   };
 }));
 

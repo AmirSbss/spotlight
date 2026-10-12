@@ -53,8 +53,11 @@ def main():
         assert flag in skill, f"SKILL.md options don't name {flag}"
     assert "music-only.mp4" in skill, "SKILL.md doesn't deliver music-only.mp4"
     assert "phase 2" not in every.lower(), "a doc still says phase 2 is coming"
+    # mix.py carries its own dependencies: `uv run <skill-dir>/scripts/mix.py`, never --project (it would put a .venv
+    # into the skill folder, which may be read-only)
     mixes = re.findall(r"[^\n`]*scripts/mix\.py[^\n`]*", every)
-    assert mixes and all("uv run --project" in m for m in mixes), mixes
+    assert mixes and all("uv run <skill-dir>/scripts/mix.py" in m and "--project" not in m for m in mixes), mixes
+    assert "/// script" in (SK / "scripts/mix.py").read_text() and "/// script" in (SK / "scripts/analyze_music_cues.py").read_text()
     for path in set(re.findall(r"assets/(?:music|sfx)/[\w.-]+\.(?:mp3|ogg|wav|json|md)", every)):
         assert (SK / path).exists(), f"docs name {path}, which doesn't exist"
     sound = refs["sound.md"]

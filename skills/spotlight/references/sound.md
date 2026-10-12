@@ -1,27 +1,39 @@
 # Sound
 
 Music, effects, live clip sound and narration, mixed by one script. Run it from `$OUT/work`:
-`uv run --project <skill-dir>/scripts python <skill-dir>/scripts/mix.py mix.json` → `mix.wav`, `music-only.wav`, `mix-report.txt`.
-The first run downloads its Python packages (about a minute).
+`uv run <skill-dir>/scripts/mix.py mix.json` → `mix.wav`, `music-only.wav`, `mix-report.txt`.
+The first run downloads its Python packages into uv's cache (about a minute); nothing is written into the skill folder.
 
 ## Music
 
 The user's track always wins (`--music <file>`, or an audio file in the inputs). `--music none` renders a silent track. Otherwise, pick one bundled track by what the buyer's *customers* would want to hear, not by "tech launch":
 
-| File | Mood | Fits | Tempo | Length | Shape |
-|---|---|---|---|---|---|
-| `assets/music/calm.mp3` | gentle chill-out | services, clinics, `polished`, `deadpan`, explainers in `clear` | ~99 BPM | 136 s | ~15 s beatless intro, groove from ~20 s |
-| `assets/music/warm-acoustic.mp3` | warm, happy folk | cafés, small shops, people, `default` and `recap` promos | uncertain | 121 s | light intro, full band from ~17 s |
-| `assets/music/upbeat.mp3` | bright pop-electronic | launches, `energetic`, `chaotic`, `app-store`, `yc-parody` | 120 BPM | 156 s | short intro, beat from ~9 s, breakdown mid-track |
-| `assets/music/minimal-tech.mp3` | minimal electronic | software and dev tools, `keynote`, any explainer up to 180 s | ~120 BPM | 193 s | steady kick from the first second |
-| `assets/music/cinematic.mp3` | gentle cinematic build | `cinematic`, `premium`, `documentary` | uncertain | 114 s | soft first ~30 s, the lift lands at ~32 s |
+Take the track for the tone; switch only when the customers clearly expect something else (a café launch is warm, not techno):
+
+| Tone | Track |
+|---|---|
+| brag `default`, `chaotic`, `app-store`; promo `energetic`, `recap` | `assets/music/upbeat.mp3` |
+| brag `polished`, `yc-parody`; explain `keynote`; any software or developer product | `assets/music/minimal-tech.mp3` |
+| promo `default` (cafés, shops, people, services) | `assets/music/warm-acoustic.mp3` |
+| brag `deadpan`; promo `premium`; explain `clear` | `assets/music/calm.mp3` |
+| brag and promo `cinematic`; explain `documentary` | `assets/music/cinematic.mp3` |
+
+Measured shapes (track time). Start the window where the music already moves, unless the hook is meant to build into a lift:
+
+| Track | Tempo | Length | Shape | Use |
+|---|---|---|---|---|
+| `upbeat.mp3` | 120 BPM | 156 s | lighter intro 0–8 s; full beat 8–144 s; softer 144–152 s; silent after | start at 8 s or later; ends usable at 151 s |
+| `minimal-tech.mp3` | ~120 BPM | 193 s | steady kick from the first second to 192 s | any start; the only track long enough for a 180 s explainer |
+| `warm-acoustic.mp3` | uncertain | 121 s | **stop-time intro 0–16 s** (a bar of sound, then a bar of near-silence); full band 16–111 s; soft outro 111–120 s | start at 16.0 s or later: never put the intro under a hook |
+| `calm.mp3` | ~99 BPM | 136 s | fades up from silence 0–18 s; steady groove 18–126 s; fades out 126–136 s | start at 18 s for movement from frame 0, or ~10 s so the groove lands 8 s in |
+| `cinematic.mp3` | uncertain | 114 s | soft 0–8 s, builds to ~32 s, fuller from ~50 s; stop-time ending 101–113 s | start at 0–8 s to build under a hook; end before 100 s |
 
 `assets/music/cues/<name>.json` holds each track's per-second loudness, tempo and strong cues (the output of `$F track --json`), so you can choose the window without measuring. For the user's own track, run `python3 $F track <file>`.
-- Start where the track already moves (a pulse even when chill), so frame 0 isn't a fade-in from nothing.
+- Start where the track already moves (a pulse even when chill), so frame 0 isn't a fade-in from nothing: use the table's "Use" column, then fine-tune with the cue file.
 - Let the lift land on the reveal or the CTA.
 - For energetic tones, cut on the beats.
 - No vocals and no epic risers.
-- The music must not fade before the end card lands. `fade_out` covers the last seconds of `duration`: keep it ≤ 1 s, and make sure the end card is already up when it starts.
+- The music keeps playing until the end card has landed: never fade early. `fade_out` covers the last seconds of `duration`; keep it ≤ 1 s, so it starts after the end card is up.
 - The window must reach the end. If `mix-report.txt` says `music runs out`, start earlier or pick a longer track.
 
 ## Effects (`--no-sfx` turns them off)
@@ -54,7 +66,9 @@ The user's track always wins (`--music <file>`, or an audio file in the inputs).
 - Density follows the tone. Deadpan, premium, polished, clear and documentary are sparse (2–4 effects in a 20 s video); chaotic and energetic are dense.
 - Never a sting over a music resolve, and nothing on the end card's last second.
 
-Put each effect's `t` on the frame where the action happens (`frame / 30`). `mix.py` sets every gain itself (its own frequency band, +3.5 dB over the music there, with caps), so leave `target_db` and `cap_db` out unless the report says an effect is buried.
+Put each effect's `t` on the frame where the action happens (`frame / 30`). Whooshes swell to their peak 0.3–0.4 s in, so give every whoosh `"align": "peak"`: its loudest moment then lands on `t` (put `t` on the cut). Clicks, pops and chimes start on their hit, so leave them at the default.
+
+`mix.py` sets every gain itself. In the effect's own frequency band, its peak sits `target_db` (+3.5 dB) over the music's peak in the same 150 ms, within caps: at most +4 dB in the 2–8 kHz band, and a broadband peak at most `cap_db` (+6 dB) over the music's. Over a quiet passage a `floor` lifts it to a level that stays audible, which can exceed those caps. The defaults are deliberately subtle: they sit with the music, the way a polished video sounds. For an effect that must punch (a `chaotic` tone, a big reveal), set its `"target_db": 6` (up to 9) and, if the report then says `peak cap`, `"cap_db": 9`.
 
 ## Live sound from clips
 
@@ -91,7 +105,7 @@ Paths are relative to `mix.json` (so `voice/s1.wav` works) or absolute (bundled 
 ```json
 {
   "music": {"file": "<skill-dir>/assets/music/upbeat.mp3", "start": 12.0, "fade_in": 0.2, "fade_out": 0.8},
-  "sfx":   [{"file": "<skill-dir>/assets/sfx/whoosh-1.ogg", "t": 3.0},
+  "sfx":   [{"file": "<skill-dir>/assets/sfx/whoosh-1.ogg", "t": 3.0, "align": "peak"},
             {"file": "<skill-dir>/assets/sfx/click-1.ogg", "t": 6.4}],
   "clips": [{"file": "clips/IMG_0042.MOV", "start": 1.2, "dur": 2.0, "t": 8.0, "gain_db": -15}],
   "voice": [{"file": "voice/s1.wav", "t": 0.5}],
@@ -100,7 +114,7 @@ Paths are relative to `mix.json` (so `voice/s1.wav` works) or absolute (bundled 
 ```
 
 `duration` is the video's length (`duration` in `timeline.js`). Read `mix-report.txt` after every run, and fix the timing and re-run if any of these fails:
-- every effect says `target`, `hf cap`, `peak cap` or `floor`, and none says `skipped`;
+- every effect says `target`, `hf cap`, `peak cap` or `floor`, and none says `skipped` (the numbers are in-band peaks over the music, not loudness);
 - there is no `music runs out` line;
 - no voice line `runs past the end`.
 

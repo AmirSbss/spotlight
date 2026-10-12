@@ -41,7 +41,7 @@ Inputs mix freely: a promo can quote the brand's site, an explainer can use foot
 - **Data:** read `*.csv` / `*.json` inputs; numbers on screen come only from them.
 
 ## 2. Brief → `work/brief.md`
-What it is, who it's for, the one message, the one action (CTA), the facts you'll show **with their source** (brief, site page, footage file, data file), and the don'ts. If the name, the CTA or the language is still unknown, ask **one** question listing everything missing. Never guess a phone number, a price or an address.
+What it is, who it's for, the one message, the one action (CTA), the facts you'll show **with their source** (brief, site page, footage file, data file), and the don'ts. If the name, the CTA or the language is still unknown, ask **one** question listing everything missing; if nobody can answer (a headless run), decide the most sensible answer and say so in your report. Never guess a phone number, a price or an address. Only public addresses go on screen: never `localhost`, `127.0.0.1`, a LAN address or a file path. With no public URL, end on the name and the action.
 
 ## 3. Plan → `plan.md`
 The angle, the hook, and a shot or section list. Each entry has its source (copy the path from the manifest or site files), in/out points or motion, its on-screen text (verbatim from the sources), its duration and its transition. Add the music (track and window) and the cue times you'll cut on, the effects (time → file → why, unless `--no-sfx`), with `--voice` the narration lines, plus the AI assets table. With `--voice`, run `voice.py` right after the plan (`references/sound.md`): the line durations set the shot timing. Durations must add up to the target. Write `sources.md` alongside: every line of on-screen text and every number → where it came from, plus the AI ledger (file, prompt, purpose, shot).
@@ -64,7 +64,7 @@ Capture with the bundled script, run from `work/` after `npm i --prefix . playwr
 - The page draws all text. Never use ffmpeg `drawtext` for on-screen text: most builds have no text shaper and can't join Persian/Arabic letters.
 - Set `lang` and `dir` on every text element: `dir="rtl"` for Persian, Arabic, Hebrew, Urdu.
 - Inside RTL text, wrap phone numbers, URLs, prices and Latin brand names in `<bdi dir="ltr">` so they don't come out reversed or jumbled. Use the digits the brief uses.
-- Font: the brief's font; otherwise a Google Font that covers the script (Vazirmatn for Persian, the matching Noto family otherwise). Download the woff2 into `work/` and load it with `@font-face`, so capture never waits on the network.
+- Font: the brief's font; otherwise a Google Font that covers the script (Vazirmatn for Persian, the matching Noto family otherwise). Fetch the Google Fonts CSS (`https://fonts.googleapis.com/css2?family=…`) with a browser User-Agent (`curl -A "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36"`), or it serves TTF instead of woff2. For a site, `brand.json` `fonts_loaded` lists the web fonts the page really loaded (`fonts` is only what its CSS asks for). Download the woff2 into `work/` and load it with `@font-face`, so capture never waits on the network.
 - **Animate joined scripts (Arabic, Persian, Urdu, Devanagari…) by word or line, never per character.** Per-character spans break the letter joining. Per-character is fine for Latin.
 - Safe zones: keep text and the CTA out of the top ~12% and bottom ~20% in vertical (8% / 10% in landscape), where platform UI sits, with ~6% side margins. The kit's `.cap.low` grows upward from that line, so longer text can't cross it.
 - No letter-spacing on Arabic-script text: it pulls joined letters apart (the kit already turns it off for `lang="fa|ar|ur"`).
@@ -90,12 +90,12 @@ Optional dependency: [gpt-image-bridge](https://github.com/oakplank/gpt-image-br
 - **Label it:** list AI shots in the plan's AI table and in your report, and add a short "Includes AI-generated illustration" line to `caption.txt` (in its language). Some platforms ask for this.
 
 ## 5. Sound
-Follow `references/sound.md`: pick the music (the user's track, else a bundled one), place the effects (unless `--no-sfx`), add live clip sound where it helps, and the narration lines with `--voice`. Write `work/mix.json` and run, from `$OUT/work`, `uv run --project <skill-dir>/scripts python <skill-dir>/scripts/mix.py mix.json` → `mix.wav`, `music-only.wav`, `mix-report.txt`. Read the report and fix anything it flags. The music must not fade before the end card lands.
+Follow `references/sound.md`: pick the music (the user's track, else a bundled one), place the effects (unless `--no-sfx`), add live clip sound where it helps, and the narration lines with `--voice`. Write `work/mix.json` and run, from `$OUT/work`, `uv run <skill-dir>/scripts/mix.py mix.json` → `mix.wav`, `music-only.wav`, `mix-report.txt`. Read the report and fix anything it flags. The music keeps playing until the end card has landed.
 
 ## 6. Capture, encode, check
 ### Check before the full render
 
-Run `python3 $F check draft.mp4 --end-card <s>` on a quick draft render; fix every hold it lists before the full render. Capture stills (`capture.mjs stills …`) in the middle of every shot, at every transition, and on the first frame after every cut (clips that were already edited hide dissolves, blurs and light leaks there), and look at them:
+The first full capture and encode is the draft (20 s takes about a minute): run `python3 $F check draft.mp4 --end-card <s> --out draft-check` on it, and fix every hold it lists before the final render. Capture stills (`capture.mjs stills …`) in the middle of every shot, at every transition, and on the first frame after every cut (clips that were already edited hide dissolves, blurs and light leaks there), and look at them:
 - Upright?
 - HDR clips not washed out?
 - Text joined and running in the right direction, numbers not reversed?

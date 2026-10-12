@@ -19,6 +19,7 @@ assert [h["text"] for h in c["headings"]][:3] == ["Boats for cats", "How it work
 assert {"Get a boat", "Order now"} <= {x["text"] for x in c["ctas"]}, c["ctas"]
 assert b["background"].lower() == "#0f172a" and b["accent"].lower() == "#f59e0b", b
 assert any("Fixture Sans" in f for f in b["fonts"]), b["fonts"]
+assert isinstance(b["fonts_loaded"], list) and "Fixture Sans" not in b["fonts_loaded"], b["fonts_loaded"]  # named, never loaded
 assert b["logo"] and b["logo"].startswith("site/assets/"), b
 PY
 n=$(ls site/screens/*.png | wc -l); (( n >= 2 && n <= 12 )) || { echo "FAIL: $n screens"; exit 1; }
