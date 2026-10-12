@@ -37,6 +37,10 @@ It reads the code or captures the site, finds the two or three moments where the
 
 It sorts the clips, drops the shaky and dark ones, opens on the strongest moving shot, puts your words on screen and ends on the offer. With `--lang fa` (or `ar`, `de`, `ja` and so on) the text comes out in that language, and Persian or Arabic letters stay joined and run right to left.
 
+[![A 20-second promo spotlight cut for Mahoor Coffee from the café's own phone clips](examples/promo/preview.gif)](examples/promo/video.mp4)
+
+*A 20-second promo for [Mahoor Coffee](https://www.instagram.com/mahoor_hills/), cut from twelve of the café's own phone clips and its logo, with no offer by the owner's choice. [Watch it with sound](examples/promo/video.mp4), or see [the Persian cut](examples/promo/video-fa.mp4). It went through three critic rounds, which caught the espresso machine maker's slogan, another café's branded cup and captions hidden under Instagram's buttons ([plan](examples/promo/plan.md), [reports](examples/promo/critics)). The footage and logo belong to the café and are used with permission.*
+
 ### An explainer with real numbers
 
 ```text
@@ -119,7 +123,7 @@ You need ffmpeg 4.4 or newer with the zscale filter, ImageMagick 6 or 7, Python 
 
 ## Status
 
-Phases 1 to 3 of 4 are done: the three modes, website capture, the check and the critic loop; sound (a bundled CC0 music and sound-effects library, levelled effects and optional local narration); and visuals (charts, diagrams, a routes globe and an extruded logo). Phase 4 adds a finished example per mode, made with spotlight itself; the explainer is in [examples/explain](examples/explain). The design and the plans live in [docs/superpowers](docs/superpowers).
+Phases 1 to 3 of 4 are done: the three modes, website capture, the check and the critic loop; sound (a bundled CC0 music and sound-effects library, levelled effects and optional local narration); and visuals (charts, diagrams, a routes globe and an extruded logo). Phase 4 adds a finished example per mode, made with spotlight itself; the explainer is in [examples/explain](examples/explain) and the promo in [examples/promo](examples/promo). The design and the plans live in [docs/superpowers](docs/superpowers).
 
 ## Tests
 
