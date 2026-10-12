@@ -4,7 +4,7 @@ spotlight is a plain [Agent Skill](https://agentskills.io): a `SKILL.md` with in
 
 ## What the agent needs
 
-- Shell access with ffmpeg, ImageMagick, Python 3, Node and Chromium installed. Run `bash skills/spotlight/scripts/doctor.sh` to check.
+- Shell access with ffmpeg, ImageMagick, Python 3, Node, Chromium and uv installed. Run `bash skills/spotlight/scripts/doctor.sh` to check.
 - Permission to run commands outside a sandbox. spotlight installs `playwright-core` with npm, launches Chromium and writes frames to disk, and a sandbox without network or process access blocks that.
 - Time. A 15-second video took Hermes about 5 minutes, Codex about 18 and Claude Code 30 to 60 with a full critic loop. Single commands (a frame capture, an encode) can run for a few minutes, so long commands must be allowed.
 - Optionally, a way to start a fresh sub-agent, which spotlight uses as the critic. Claude Code, Codex and Hermes all have one. Without it, the agent reviews its own render against the same checklist.

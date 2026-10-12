@@ -8,4 +8,6 @@
 | "Montage" by wipics ([OpenGameArt](https://opengameart.org/content/montage)): music, 17.47 to 42.47 s | `examples/demo/video.mp4` (audio only; the track itself isn't in the repo) | CC0 |
 | Space Grotesk, Inter, JetBrains Mono (Google Fonts) | rendered into `examples/demo/video.mp4` | SIL OFL 1.1 |
 
-No music or sound effects are bundled with the skill yet. Phase 2 adds CC0-only assets, each with its own source and licence record.
+The bundled music (`skills/spotlight/assets/music/`) and sound effects (`skills/spotlight/assets/sfx/`) are CC0. Each file's author, source page and licence statement are in the `LICENSES.md` beside it.
+
+Piper (narration, `piper-tts`, GPL-3.0) is not bundled. `voice.py` runs it as a separate program, and downloads voices on first use; each voice carries its own licence (`skills/spotlight/references/sound.md`).
